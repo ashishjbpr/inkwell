@@ -6,9 +6,21 @@ export interface Entry {
   content: string;
   mood: Mood;
   tags: string[];
+  isFavorite?: boolean;
+  location?: string;
+  weather?: string;
   createdAt: string; // ISO string
   updatedAt: string; // ISO string
 }
+
+export const WEATHER_OPTIONS = [
+  { value: "sunny", label: "Sunny", icon: "Sun" },
+  { value: "cloudy", label: "Cloudy", icon: "Cloud" },
+  { value: "rainy", label: "Rainy", icon: "CloudRain" },
+  { value: "stormy", label: "Stormy", icon: "CloudLightning" },
+  { value: "snowy", label: "Snowy", icon: "CloudSnow" },
+  { value: "windy", label: "Windy", icon: "Wind" },
+];
 
 export const MOODS: { value: Mood; label: string; icon: string; color: string }[] = [
   { value: "happy", label: "Happy", icon: "Smile", color: "#FCD34D" },

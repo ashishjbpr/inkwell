@@ -22,44 +22,27 @@ export default function PromptModal({ open, onClose, onSelect }: PromptModalProp
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: "rgba(17, 15, 31, 0.5)", backdropFilter: "blur(6px)" }}
-    >
+    <div className="modal-overlay" onClick={onClose}>
       <div
-        className="relative w-full max-w-md rounded-3xl border-2 p-6 shadow-2xl"
-        style={{
-          borderColor: "var(--border)",
-          backgroundColor: "var(--bg-card)",
-        }}
+        className="card w-full max-w-md relative"
+        onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
-          style={{ color: "var(--text-tertiary)" }}
-          onMouseOver={(e) => { e.currentTarget.style.backgroundColor = "var(--bg-hover)"; e.currentTarget.style.color = "var(--text)"; }}
-          onMouseOut={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--text-tertiary)"; }}
+          className="btn btn-icon btn-secondary absolute top-4 right-4"
+          aria-label="Close"
         >
           <X size={18} />
         </button>
 
         <div className="mb-4">
           <Sparkles size={28} style={{ color: "var(--accent)" }} />
-          <h3 className="text-lg font-bold mt-2" style={{ color: "var(--text)" }}>Writing Prompt</h3>
-          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>Stuck? Let inspiration find you.</p>
+          <h3 className="text-lg font-bold mt-2 text-[var(--text)]">Writing Prompt</h3>
+          <p className="text-sm text-[var(--text-secondary)]">Stuck? Let inspiration find you.</p>
         </div>
 
-        <div
-          className="p-4 rounded-2xl border mb-4"
-          style={{
-            backgroundColor: "var(--accent-bg)",
-            borderColor: "var(--accent)",
-          }}
-        >
-          <p
-            className="leading-relaxed font-serif italic text-lg"
-            style={{ color: "var(--accent-text)" }}
-          >
+        <div className="p-4 rounded-xl border mb-4 bg-[var(--accent-bg)] border-[var(--accent)]">
+          <p className="leading-relaxed font-serif italic text-lg text-[var(--accent-text)]">
             &ldquo;{prompt}&rdquo;
           </p>
         </div>
@@ -67,13 +50,7 @@ export default function PromptModal({ open, onClose, onSelect }: PromptModalProp
         <div className="flex gap-2">
           <button
             onClick={shuffle}
-            className="flex-1 px-4 py-2.5 rounded-xl border-2 font-medium text-sm transition-colors flex items-center justify-center gap-2"
-            style={{
-              borderColor: "var(--border)",
-              color: "var(--text-secondary)",
-            }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = "var(--bg-hover)"}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+            className="btn btn-secondary flex-1"
           >
             <Shuffle size={16} />
             Shuffle
@@ -83,13 +60,7 @@ export default function PromptModal({ open, onClose, onSelect }: PromptModalProp
               onSelect(prompt);
               onClose();
             }}
-            className="flex-1 px-4 py-2.5 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2"
-            style={{
-              backgroundColor: "var(--accent)",
-              color: "#fff",
-            }}
-            onMouseOver={(e) => e.currentTarget.style.opacity = "0.9"}
-            onMouseOut={(e) => e.currentTarget.style.opacity = "1"}
+            className="btn btn-primary flex-1"
           >
             <PenLine size={16} />
             Use This Prompt

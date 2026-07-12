@@ -1,0 +1,137 @@
+Make custom:
+Dropdown for the whole application
+Slider or scroll
+
+Bugs:
+When selecting another date from the calendar for entry, when the editor opens it selects todays date always (fix that)
+Current streak not counting todays journal entries
+
+Needed features:
+Add quotes section beside the calender (use free apis)(production grade)
+
+Rich Text Editor Requirements
+
+The editor should provide a modern, collaborative writing experience similar to Notion, Google Docs, or Confluence while remaining fast and intuitive.
+
+1. Rich Formatting
+Text Formatting
+Bold
+Italic
+Underline
+Strikethrough
+Highlight
+Inline code
+Superscript
+Subscript
+Clear formatting
+Headings
+Heading 1–6
+Paragraph
+Block quote
+Lists
+Bullet list
+Numbered list
+Checklist (To-do)
+Nested lists
+Multi-level indentation
+Alignment
+Left
+Center
+Right
+Justify
+Font Controls
+Font family
+Font size
+Text color
+Background color
+Blocks
+Horizontal divider
+Callout / Info box
+Warning box
+Success box
+Expandable/Collapsible section
+Tables
+Insert table
+Add/remove rows
+Add/remove columns
+Merge cells
+Resize columns
+Sort rows
+Header row
+Copy/paste table
+Code
+Inline code
+Code blocks
+Syntax highlighting
+Language selection
+Copy button
+Links
+Hyperlinks
+Edit links
+Remove links
+Open in new tab
+Automatic URL detection
+Media Embeds
+Images
+Videos
+YouTube
+Tweets/X posts
+PDFs
+Audio
+File attachments
+
+2. Drag & Drop Images
+
+The editor should support intuitive image insertion.
+
+Supported Sources
+Desktop
+File Explorer/Finder
+Browser
+Another webpage
+Clipboard
+Supported Formats
+PNG
+JPEG
+GIF
+WEBP
+SVG
+AVIF
+Behavior
+Drag directly into editor
+Visual drop indicator
+Automatic upload
+Progress indicator
+Retry on failure
+Cancel upload
+Multiple images simultaneously -> later
+Image Features
+Resize
+Crop
+Rotate
+Replace image
+Delete image
+Alignment
+Caption
+Alt text
+Lazy loading
+
+3. Paste Images
+
+Support pasting images from any source.
+
+Clipboard Sources
+Screenshot tools
+Windows Clipboard
+Behavior
+Ctrl + V / Cmd + V
+Insert at cursor position
+Preserve image quality
+Smart Handling
+Paste multiple images
+Detect duplicate images
+(Compress large images -> later
+Convert unsupported formats -> later)
+
+4. Markdown Support
+Recognize Markdown while typing.

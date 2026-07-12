@@ -69,7 +69,7 @@ export default function YearlyOverview({ entries, onClose }: YearlyOverviewProps
 
   return (
     <div className="yearly-overlay" onClick={onClose}>
-      <div className="yearly-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="card w-full max-w-[820px] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="yearly-header">
           <h2 className="yearly-title">Year Overview</h2>
           <div className="yearly-nav">
@@ -94,8 +94,8 @@ export default function YearlyOverview({ entries, onClose }: YearlyOverviewProps
         </div>
 
         <div className="yearly-stats">
-          <span className="yearly-stat-badge">{totalForYear} entries this year</span>
-          <span className="yearly-stat-badge">{monthCounts.filter((c) => c > 0).length} active months</span>
+          <span className="badge badge-primary">{totalForYear} entries this year</span>
+          <span className="badge badge-primary">{monthCounts.filter((c) => c > 0).length} active months</span>
         </div>
 
         <div className="yearly-months">

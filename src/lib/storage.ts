@@ -3,6 +3,27 @@
 import { Entry } from "./types";
 
 const STORAGE_KEY = "life-journal-entries";
+const PIN_KEY = "life-journal-pin";
+
+export function getPin(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(PIN_KEY);
+}
+
+export function setPin(pin: string | null): void {
+  if (typeof window === "undefined") return;
+  if (pin === null) {
+    localStorage.removeItem(PIN_KEY);
+  } else {
+    localStorage.setItem(PIN_KEY, pin);
+  }
+}
+
+export function validatePin(pin: string): boolean {
+  const stored = getPin();
+  if (!stored) return true; // No pin set
+  return stored === pin;
+}
 
 export function getEntries(): Entry[] {
   if (typeof window === "undefined") return [];
@@ -24,9 +45,9 @@ export function getEntry(id: string): Entry | undefined {
   return getEntries().find((e) => e.id === id);
 }
 
-export function createEntry(entry: Omit<Entry, "id" | "createdAt" | "updatedAt">): Entry {
+export function createEntry(entry: Omit<Entry, "id" | "createdAt" | "updatedAt"> & { createdAt?: string }): Entry {
   const entries = getEntries();
-  const now = new Date().toISOString();
+  const now = entry.createdAt || new Date().toISOString();
   const newEntry: Entry = {
     ...entry,
     id: crypto.randomUUID(),
@@ -60,27 +81,28 @@ export function getStreak(): number {
   const entries = getEntries();
   if (entries.length === 0) return 0;
 
-  // Get unique dates (by day) sorted descending
+  // Get unique dates (by day) in local time sorted descending
   const dates = [
     ...new Set(
-      entries.map((e) => e.createdAt.split("T")[0])
+      entries.map((e) => {
+        const d = new Date(e.createdAt);
+        return d.toLocaleDateString("en-CA"); // YYYY-MM-DD
+      })
     ),
   ].sort((a, b) => b.localeCompare(a));
 
   let streak = 0;
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  // Check if there's an entry today or yesterday to start streak
-  const todayStr = today.toISOString().split("T")[0];
-  const yesterday = new Date(today);
+  const todayStr = today.toLocaleDateString("en-CA");
+  const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().split("T")[0];
+  const yesterdayStr = yesterday.toLocaleDateString("en-CA");
 
   const startIdx = dates[0] === todayStr || dates[0] === yesterdayStr ? 0 : -1;
   if (startIdx === -1) return 0;
 
-  const checkDate = new Date(dates[0]);
+  // Since we use YYYY-MM-DD, creating a date from it parses as UTC midnight, which is consistent for math
+  const checkDate = new Date(dates[0]); 
   for (let i = 0; i < dates.length; i++) {
     const expected = new Date(checkDate);
     expected.setDate(expected.getDate() - i);

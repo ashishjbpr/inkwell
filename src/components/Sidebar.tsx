@@ -8,22 +8,24 @@ import {
   Plus,
   FileDown,
   X,
-  Menu,
-  Flame,
   BookOpen,
+  LayoutDashboard,
+  Lock,
+  Star
 } from "lucide-react";
-import { getStreak } from "@/lib/storage";
-import ThemeToggle from "@/components/ThemeToggle";
+import ThemeSelector from "@/components/ThemeSelector";
 import MoodIcon from "@/components/MoodIcon";
 
 interface SidebarProps {
   entries: Entry[];
   selectedId: string | null;
-  onSelect: (id: string) => void;
+  onSelect: (id: string | null) => void;
   onNew: () => void;
   onExport: () => void;
   open: boolean;
   onToggle: () => void;
+  hasPin: boolean;
+  onLockApp: () => void;
 }
 
 export default function Sidebar({
@@ -34,10 +36,12 @@ export default function Sidebar({
   onExport,
   open,
   onToggle,
+  hasPin,
+  onLockApp
 }: SidebarProps) {
   const [search, setSearch] = useState("");
   const [moodFilter, setMoodFilter] = useState<Mood | "all">("all");
-  const streak = getStreak();
+  const [showFavorites, setShowFavorites] = useState(false);
 
   const filtered = useMemo(() => {
     return entries.filter((e) => {
@@ -48,9 +52,10 @@ export default function Sidebar({
         e.content.toLowerCase().includes(q) ||
         e.tags.some((t) => t.includes(q));
       const matchesMood = moodFilter === "all" || e.mood === moodFilter;
-      return matchesSearch && matchesMood;
+      const matchesFavorite = !showFavorites || e.isFavorite;
+      return matchesSearch && matchesMood && matchesFavorite;
     });
-  }, [entries, search, moodFilter]);
+  }, [entries, search, moodFilter, showFavorites]);
 
   function formatDate(dateStr: string) {
     const date = parseISO(dateStr);
@@ -84,10 +89,9 @@ export default function Sidebar({
                 <BookOpen size={22} style={{ color: "var(--accent)" }} />
                 Life Journal
               </h1>
-              <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>Your private space</p>
             </div>
             <div className="flex items-center gap-2">
-              <ThemeToggle />
+              <ThemeSelector />
               <button
                 onClick={onToggle}
                 className="w-8 h-8 rounded-xl flex items-center justify-center lg:hidden transition-colors"
@@ -100,36 +104,28 @@ export default function Sidebar({
             </div>
           </div>
 
-          <button
-            onClick={onNew}
-            className="btn-accent-glow w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all"
-            style={{
-              backgroundColor: "var(--accent)",
-              color: "#fff",
-            }}
-            onMouseOver={(e) => e.currentTarget.style.opacity = "0.9"}
-            onMouseOut={(e) => e.currentTarget.style.opacity = "1"}
-          >
-            <Plus size={18} />
-            New Entry
-          </button>
-        </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => onSelect(null)}
+              className={`btn flex-1 ${selectedId === null ? 'btn-secondary' : 'btn-ghost'}`}
+              style={selectedId === null ? { borderColor: 'var(--accent)', color: 'var(--accent)', backgroundColor: 'var(--accent-bg)' } : {}}
+            >
+              <LayoutDashboard size={18} />
+              Dashboard
+            </button>
 
-        {/* Streak */}
-        <div
-          className="px-4 py-3 border-b-2 flex items-center gap-2 text-sm"
-          style={{
-            borderColor: "var(--border)",
-            backgroundColor: "var(--streak-bg)",
-          }}
-        >
-          <Flame size={20} style={{ color: "var(--accent)" }} />
-          <span className="font-bold" style={{ color: "var(--streak-text)" }}>{streak} day streak</span>
-          <span className="text-xs ml-auto" style={{ color: "var(--text-tertiary)" }}>Keep writing!</span>
+            <button
+              onClick={onNew}
+              className="btn btn-primary flex-1 btn-accent-glow"
+            >
+              <Plus size={18} />
+              New
+            </button>
+          </div>
         </div>
 
         {/* Search & Filters */}
-        <div className="p-4 border-b-2 space-y-2" style={{ borderColor: "var(--border)" }}>
+        <div className="p-4 border-b-2 space-y-3" style={{ borderColor: "var(--border)" }}>
           <div className="relative">
             <Search
               size={16}
@@ -140,44 +136,37 @@ export default function Sidebar({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search entries…"
-              className="w-full pl-9 pr-3 py-2 rounded-xl text-sm outline-none transition-colors"
-              style={{
-                backgroundColor: "var(--bg-card)",
-                color: "var(--text)",
-                border: "2px solid var(--border)",
-              }}
-              onFocus={(e) => e.currentTarget.style.borderColor = "var(--accent)"}
-              onBlur={(e) => e.currentTarget.style.borderColor = "var(--border)"}
+              className="input-field pl-9"
             />
           </div>
 
-          <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-thin">
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setMoodFilter("all")}
-              className="shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors"
-              style={{
-                backgroundColor: moodFilter === "all" ? "var(--accent)" : "var(--bg-card)",
-                color: moodFilter === "all" ? "#fff" : "var(--text-secondary)",
-                borderColor: moodFilter === "all" ? "var(--accent)" : "var(--border)",
-              }}
+              onClick={() => setShowFavorites(!showFavorites)}
+              className={`shrink-0 cursor-pointer ${showFavorites ? 'badge badge-primary' : 'badge'}`}
             >
-              All
+              <Star size={12} fill={showFavorites ? "currentColor" : "none"} />
+              Favorites
             </button>
-            {MOODS.map((mood) => (
+            <div className="w-px h-4" style={{ backgroundColor: "var(--border)" }} />
+            <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-thin">
               <button
-                key={mood.value}
-                onClick={() => setMoodFilter(mood.value)}
-                className="shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors flex items-center gap-1"
-                style={{
-                  backgroundColor: moodFilter === mood.value ? "var(--accent)" : "var(--bg-card)",
-                  color: moodFilter === mood.value ? "#fff" : "var(--text-secondary)",
-                  borderColor: moodFilter === mood.value ? "var(--accent)" : "var(--border)",
-                }}
+                onClick={() => setMoodFilter("all")}
+                className={`shrink-0 cursor-pointer ${moodFilter === "all" ? 'badge badge-primary' : 'badge'}`}
               >
-                <MoodIcon mood={mood.value} size={14} />
-                {mood.label}
+                All
               </button>
-            ))}
+              {MOODS.map((mood) => (
+                <button
+                  key={mood.value}
+                  onClick={() => setMoodFilter(mood.value)}
+                  className={`shrink-0 cursor-pointer ${moodFilter === mood.value ? 'badge badge-primary' : 'badge'}`}
+                >
+                  <MoodIcon mood={mood.value} size={12} />
+                  {mood.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -187,8 +176,8 @@ export default function Sidebar({
             <div className="text-center py-8 px-4">
               <BookOpen size={36} className="mx-auto mb-2" style={{ color: "var(--text-tertiary)" }} />
               <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-                {search || moodFilter !== "all"
-                  ? "No entries match your search"
+                {search || moodFilter !== "all" || showFavorites
+                  ? "No entries match your filters"
                   : "No entries yet. Start writing!"}
               </p>
             </div>
@@ -197,34 +186,21 @@ export default function Sidebar({
               <button
                 key={entry.id}
                 onClick={() => onSelect(entry.id)}
-                className="w-full text-left p-3 rounded-2xl border-2 transition-all"
-                style={{
-                  backgroundColor: selectedId === entry.id ? "var(--bg-card)" : "transparent",
-                  borderColor: selectedId === entry.id ? "var(--accent)" : "transparent",
-                }}
-                onMouseOver={(e) => {
-                  if (selectedId !== entry.id) {
-                    e.currentTarget.style.backgroundColor = "var(--bg-card)";
-                    e.currentTarget.style.borderColor = "var(--border)";
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (selectedId !== entry.id) {
-                    e.currentTarget.style.backgroundColor = "transparent";
-                    e.currentTarget.style.borderColor = "transparent";
-                  }
-                }}
+                className={`list-item relative ${selectedId === entry.id ? 'list-item-active' : ''}`}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>
+                  <span className="text-xs font-medium text-[var(--text-tertiary)]">
                     {formatDate(entry.createdAt)}
                   </span>
-                  <MoodIcon mood={entry.mood} size={18} />
+                  <div className={`flex items-center gap-1 ${selectedId === entry.id ? 'text-[var(--accent-text)]' : 'text-[var(--accent)]'}`}>
+                    {entry.isFavorite && <Star size={12} fill="currentColor" />}
+                    <MoodIcon mood={entry.mood} size={18} />
+                  </div>
                 </div>
-                <p className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>
+                <p className={`text-sm font-semibold truncate ${selectedId === entry.id ? 'text-[var(--accent-text)]' : 'text-[var(--text)]'}`}>
                   {entry.title || "Untitled"}
                 </p>
-                <p className="text-xs line-clamp-1 mt-0.5" style={{ color: "var(--text-secondary)" }}>
+                <p className={`text-xs line-clamp-1 mt-0.5 opacity-70 ${selectedId === entry.id ? 'text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}>
                   {entry.content.replace(/<[^>]*>/g, "").slice(0, 80)}
                 </p>
                 {entry.tags.length > 0 && (
@@ -232,11 +208,7 @@ export default function Sidebar({
                     {entry.tags.slice(0, 3).map((tag) => (
                       <span
                         key={tag}
-                        className="px-1.5 py-0.5 rounded-md text-[10px] font-medium"
-                        style={{
-                          backgroundColor: "var(--accent-bg)",
-                          color: "var(--accent-text)",
-                        }}
+                        className={`text-[10px] py-0 px-1.5 rounded-full border opacity-80 ${selectedId === entry.id ? 'border-current' : 'border-[var(--accent)] text-[var(--accent)]'}`}
                       >
                         #{tag}
                       </span>
@@ -249,24 +221,23 @@ export default function Sidebar({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t-2" style={{ borderColor: "var(--border)" }}>
-          <button
-            onClick={onExport}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 font-medium text-sm transition-colors"
-            style={{
-              borderColor: "var(--border)",
-              color: "var(--text-secondary)",
-              backgroundColor: "transparent",
-            }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = "var(--bg-hover)"}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
-          >
-            <FileDown size={16} />
-            Export as HTML
-          </button>
-          <p className="text-[10px] text-center mt-2" style={{ color: "var(--text-tertiary)" }}>
-            {entries.length} {entries.length === 1 ? "entry" : "entries"} · 100% private
-          </p>
+        <div className="p-4 border-t-2 space-y-2" style={{ borderColor: "var(--border)" }}>
+          <div className="flex gap-2">
+            <button
+              onClick={onExport}
+              className="btn btn-secondary flex-1 text-xs py-2"
+            >
+              <FileDown size={14} />
+              Export
+            </button>
+            <button
+              onClick={onLockApp}
+              className="btn btn-secondary flex-1 text-xs py-2"
+            >
+              <Lock size={14} />
+              {hasPin ? "Lock App" : "Set PIN"}
+            </button>
+          </div>
         </div>
       </aside>
     </>

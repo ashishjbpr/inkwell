@@ -1,22 +1,35 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Entry, MOODS, Mood } from "@/lib/types";
+import { Entry, MOODS, Mood, WEATHER_OPTIONS } from "@/lib/types";
 import { updateEntry, deleteEntry } from "@/lib/storage";
 import {
-  Bold,
-  Italic,
-  Underline,
-  List,
-  ListOrdered,
-  Sparkles,
   FileText,
   Trash2,
   BookOpen,
+  Star,
+  MapPin,
+  Cloud,
+  Sun,
+  CloudRain,
+  CloudLightning,
+  CloudSnow,
+  Wind
 } from "lucide-react";
 import MoodPicker from "./MoodPicker";
 import TagInput from "./TagInput";
-import PromptModal from "./PromptModal";
+import Dropdown from "./ui/Dropdown";
+import RichTextEditor from "./Editor/RichTextEditor";
+
+const weatherOptionsWithIcons = WEATHER_OPTIONS.map(opt => {
+  let IconCmp = Cloud;
+  if (opt.icon === "Sun") IconCmp = Sun;
+  if (opt.icon === "CloudRain") IconCmp = CloudRain;
+  if (opt.icon === "CloudLightning") IconCmp = CloudLightning;
+  if (opt.icon === "CloudSnow") IconCmp = CloudSnow;
+  if (opt.icon === "Wind") IconCmp = Wind;
+  return { ...opt, icon: <IconCmp size={16} /> };
+});
 
 interface EntryEditorProps {
   entry: Entry | null;
@@ -29,11 +42,12 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
   const [content, setContent] = useState("");
   const [mood, setMood] = useState<Mood | null>(null);
   const [tags, setTags] = useState<string[]>([]);
-  const [showPrompt, setShowPrompt] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [location, setLocation] = useState("");
+  const [weather, setWeather] = useState("");
   const [saved, setSaved] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const contentRef = useRef<HTMLDivElement>(null);
 
   // Load entry data when selected entry changes
   useEffect(() => {
@@ -42,19 +56,33 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
       setContent(entry.content);
       setMood(entry.mood);
       setTags(entry.tags);
+      setIsFavorite(entry.isFavorite || false);
+      setLocation(entry.location || "");
+      setWeather(entry.weather || "");
       setSaved(true);
       setConfirmDelete(false);
     }
   }, [entry?.id]);
 
   const doSave = useCallback(
-    (t: string, c: string, m: Mood | null, tg: string[]) => {
+    (
+      t: string, 
+      c: string, 
+      m: Mood | null, 
+      tg: string[], 
+      fav: boolean, 
+      loc: string, 
+      wea: string
+    ) => {
       if (!entry || !m) return;
       const updated = updateEntry(entry.id, {
         title: t,
         content: c,
         mood: m,
         tags: tg,
+        isFavorite: fav,
+        location: loc,
+        weather: wea
       });
       if (updated) {
         setSaved(true);
@@ -64,50 +92,60 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
     [entry?.id, onUpdate]
   );
 
+  function debounceSave(
+    t: string, 
+    c: string, 
+    m: Mood | null, 
+    tg: string[], 
+    fav: boolean, 
+    loc: string, 
+    wea: string
+  ) {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => doSave(t, c, m, tg, fav, loc, wea), 800);
+  }
+
   function handleTitleChange(val: string) {
     setTitle(val);
     setSaved(false);
-    debounceSave(val, content, mood, tags);
+    debounceSave(val, content, mood, tags, isFavorite, location, weather);
   }
 
-  function handleContentChange() {
-    const el = contentRef.current;
-    if (!el) return;
-    const html = el.innerHTML;
+  function handleContentChange(html: string) {
     setContent(html);
     setSaved(false);
-    debounceSave(title, html, mood, tags);
+    debounceSave(title, html, mood, tags, isFavorite, location, weather);
   }
 
   function handleMoodChange(val: Mood) {
     setMood(val);
     setSaved(false);
-    debounceSave(title, content, val, tags);
+    debounceSave(title, content, val, tags, isFavorite, location, weather);
   }
 
   function handleTagsChange(val: string[]) {
     setTags(val);
     setSaved(false);
-    debounceSave(title, content, mood, val);
+    debounceSave(title, content, mood, val, isFavorite, location, weather);
   }
 
-  function debounceSave(t: string, c: string, m: Mood | null, tg: string[]) {
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => doSave(t, c, m, tg), 800);
+  function toggleFavorite() {
+    const newVal = !isFavorite;
+    setIsFavorite(newVal);
+    setSaved(false);
+    debounceSave(title, content, mood, tags, newVal, location, weather);
   }
 
-  function handlePromptSelect(prompt: string) {
-    const el = contentRef.current;
-    if (!el) return;
-    el.focus();
-    document.execCommand("insertText", false, prompt + "\n\n");
-    handleContentChange();
+  function handleLocationChange(val: string) {
+    setLocation(val);
+    setSaved(false);
+    debounceSave(title, content, mood, tags, isFavorite, val, weather);
   }
 
-  function execCmd(cmd: string, val?: string) {
-    document.execCommand(cmd, false, val);
-    handleContentChange();
-    contentRef.current?.focus();
+  function handleWeatherChange(val: string) {
+    setWeather(val);
+    setSaved(false);
+    debounceSave(title, content, mood, tags, isFavorite, location, val);
   }
 
   function handleDelete() {
@@ -184,101 +222,36 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
-      {/* Toolbar */}
-      <div
-        className="flex items-center gap-2 px-4 py-2.5 border-b-2 flex-wrap"
-        style={{ borderColor: "var(--border)", backgroundColor: "var(--bg-card)" }}
-      >
-        <MoodPicker value={mood} onChange={handleMoodChange} />
+      {/* Top Header info (Mood, Favorite, Saved status) */}
+      <div className="flex flex-col bg-[var(--bg-card)]">
+        <div className="flex items-center gap-2 px-4 py-3 border-b-2 border-[var(--border)]">
+          <MoodPicker value={mood} onChange={handleMoodChange} />
 
-        <div className="w-px h-6" style={{ backgroundColor: "var(--border)" }} />
+          <div className="w-px h-6 bg-[var(--border)]" />
 
-        <div className="flex items-center gap-0.5">
           <button
-            onClick={() => execCmd("bold")}
-            className="px-2.5 py-1.5 rounded-lg text-sm font-bold transition-colors"
-            style={{ color: "var(--text-secondary)" }}
-            onMouseOver={(e) => { e.currentTarget.style.backgroundColor = "var(--bg-hover)"; e.currentTarget.style.color = "var(--text)"; }}
-            onMouseOut={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}
-            title="Bold"
+            onClick={toggleFavorite}
+            className="btn btn-icon btn-ghost"
+            style={{ color: isFavorite ? "var(--accent)" : "var(--text-secondary)" }}
+            title={isFavorite ? "Unfavorite" : "Favorite"}
           >
-            <Bold size={16} />
+            <Star size={18} fill={isFavorite ? "var(--accent)" : "none"} />
           </button>
-          <button
-            onClick={() => execCmd("italic")}
-            className="px-2.5 py-1.5 rounded-lg text-sm transition-colors"
-            style={{ color: "var(--text-secondary)" }}
-            onMouseOver={(e) => { e.currentTarget.style.backgroundColor = "var(--bg-hover)"; e.currentTarget.style.color = "var(--text)"; }}
-            onMouseOut={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}
-            title="Italic"
-          >
-            <Italic size={16} />
-          </button>
-          <button
-            onClick={() => execCmd("underline")}
-            className="px-2.5 py-1.5 rounded-lg text-sm transition-colors"
-            style={{ color: "var(--text-secondary)" }}
-            onMouseOver={(e) => { e.currentTarget.style.backgroundColor = "var(--bg-hover)"; e.currentTarget.style.color = "var(--text)"; }}
-            onMouseOut={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}
-            title="Underline"
-          >
-            <Underline size={16} />
-          </button>
+          
+          <div className="ml-auto flex items-center gap-3">
+            <span
+              className="text-xs"
+              style={{ color: saved ? "var(--text-tertiary)" : "var(--accent)" }}
+            >
+              {saved ? "● Saved" : "○ Saving…"}
+            </span>
+            <span className="text-xs text-[var(--text-tertiary)]">
+              | {wordCount(content)} words
+            </span>
+          </div>
         </div>
-
-        <div className="w-px h-6" style={{ backgroundColor: "var(--border)" }} />
-
-        <button
-          onClick={() => execCmd("insertUnorderedList")}
-          className="px-2.5 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1.5"
-          style={{ color: "var(--text-secondary)" }}
-          onMouseOver={(e) => { e.currentTarget.style.backgroundColor = "var(--bg-hover)"; e.currentTarget.style.color = "var(--text)"; }}
-          onMouseOut={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}
-          title="Bullet list"
-        >
-          <List size={16} />
-        </button>
-        <button
-          onClick={() => execCmd("insertOrderedList")}
-          className="px-2.5 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1.5"
-          style={{ color: "var(--text-secondary)" }}
-          onMouseOver={(e) => { e.currentTarget.style.backgroundColor = "var(--bg-hover)"; e.currentTarget.style.color = "var(--text)"; }}
-          onMouseOut={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}
-          title="Numbered list"
-        >
-          <ListOrdered size={16} />
-        </button>
-
-        <div className="w-px h-6" style={{ backgroundColor: "var(--border)" }} />
-
-        <button
-          onClick={() => setShowPrompt(true)}
-          className="px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1.5"
-          style={{ color: "var(--text-secondary)" }}
-          onMouseOver={(e) => { e.currentTarget.style.backgroundColor = "var(--bg-hover)"; e.currentTarget.style.color = "var(--text)"; }}
-          onMouseOut={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}
-          title="Get a writing prompt"
-        >
-          <Sparkles size={16} />
-          Prompt
-        </button>
-
-        <div className="ml-auto flex items-center gap-2">
-          <span
-            className="text-xs"
-            style={{ color: saved ? "var(--text-tertiary)" : "var(--accent)" }}
-          >
-            {saved ? "● Saved" : "○ Saving…"}
-          </span>
-          <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-            | {wordCount(content)} words
-          </span>
-        </div>
-      </div>
-
-      {/* Editor body */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto p-6">
+        
+        <div className="px-6 py-4 border-b border-[var(--border-light)]">
           {/* Date */}
           <p className="text-sm mb-2" style={{ color: "var(--text-tertiary)" }}>
             {new Date(entry.createdAt).toLocaleDateString("en-US", {
@@ -294,38 +267,50 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
             value={title}
             onChange={(e) => handleTitleChange(e.target.value)}
             placeholder="Entry title…"
-            className="w-full text-3xl font-bold bg-transparent border-none outline-none mb-4"
+            className="w-full text-4xl font-bold bg-transparent border-none outline-none mb-6"
             style={{ color: "var(--text)" }}
             onFocus={(e) => e.currentTarget.style.setProperty("--tw-placeholder-color", "var(--text-tertiary)")}
           />
+          
+          <div className="flex flex-wrap items-center gap-4 mb-4">
+            {/* Location */}
+            <div className="flex items-center gap-2 w-48">
+              <MapPin size={16} style={{ color: "var(--text-tertiary)" }} />
+              <input
+                value={location}
+                onChange={(e) => handleLocationChange(e.target.value)}
+                placeholder="Add location..."
+                className="input-field"
+              />
+            </div>
 
-          {/* Tags */}
-          <div className="mb-4">
-            <TagInput tags={tags} onChange={handleTagsChange} />
+            {/* Weather using Custom Dropdown */}
+            <div className="flex items-center gap-2 w-48 z-10">
+              <Cloud size={16} style={{ color: "var(--text-tertiary)" }} />
+              <Dropdown 
+                options={weatherOptionsWithIcons} 
+                value={weather} 
+                onChange={handleWeatherChange} 
+                placeholder="Select weather..."
+                className="w-full"
+              />
+            </div>
           </div>
 
-          {/* Content */}
-          <div
-            ref={contentRef}
-            contentEditable
-            suppressContentEditableWarning
-            onInput={handleContentChange}
-            className="prose max-w-none outline-none min-h-[300px] leading-relaxed"
-            style={{
-              color: "var(--text)",
-              fontSize: "16px",
-              lineHeight: "1.8",
-            }}
-            dangerouslySetInnerHTML={{ __html: content }}
-          />
+          {/* Tags */}
+          <div className="mb-2">
+            <TagInput tags={tags} onChange={handleTagsChange} />
+          </div>
         </div>
       </div>
 
+      {/* Tiptap Editor */}
+      <div className="flex-1 overflow-hidden flex flex-col relative z-0">
+        <RichTextEditor content={content} onChange={handleContentChange} />
+      </div>
+
       {/* Bottom bar */}
-      <div
-        className="flex items-center justify-between px-4 py-2 border-t-2"
-        style={{ borderColor: "var(--border)", backgroundColor: "var(--bg-card)" }}
-      >
+      <div className="flex items-center justify-between px-4 py-2 border-t-2 border-[var(--border)] bg-[var(--bg-card)]">
         <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
           {entry.createdAt.split("T")[0] === new Date().toISOString().split("T")[0]
             ? "Writing today"
@@ -334,50 +319,20 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
         <div className="flex items-center gap-2">
           <button
             onClick={handleExportPDF}
-            className="px-3 py-1.5 rounded-lg border-2 text-xs font-medium transition-colors flex items-center gap-1.5"
-            style={{
-              borderColor: "var(--border)",
-              color: "var(--text-secondary)",
-            }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = "var(--bg-hover)"}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+            className="btn btn-secondary text-xs py-1.5 px-3"
           >
             <FileText size={14} />
             Export
           </button>
           <button
             onClick={handleDelete}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
-              confirmDelete ? "" : ""
-            }`}
-            style={{
-              backgroundColor: confirmDelete ? "var(--accent)" : "transparent",
-              color: confirmDelete ? "#fff" : "var(--text-secondary)",
-              border: `2px solid ${confirmDelete ? "var(--accent)" : "var(--border)"}`,
-            }}
-            onMouseOver={(e) => {
-              if (!confirmDelete) {
-                e.currentTarget.style.backgroundColor = "var(--bg-hover)";
-              }
-            }}
-            onMouseOut={(e) => {
-              if (!confirmDelete) {
-                e.currentTarget.style.backgroundColor = "transparent";
-              }
-            }}
+            className={`btn text-xs py-1.5 px-3 ${confirmDelete ? 'btn-danger' : 'btn-secondary'}`}
           >
             <Trash2 size={14} />
             {confirmDelete ? "Confirm?" : "Delete"}
           </button>
         </div>
       </div>
-
-      {/* Prompt Modal */}
-      <PromptModal
-        open={showPrompt}
-        onClose={() => setShowPrompt(false)}
-        onSelect={handlePromptSelect}
-      />
     </div>
   );
 }

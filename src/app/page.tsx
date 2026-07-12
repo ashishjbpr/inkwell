@@ -2,14 +2,14 @@
 
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { Entry } from "@/lib/types";
-import { getEntries, createEntry } from "@/lib/storage";
-import { BookOpen, Plus, CalendarDays, Menu } from "lucide-react";
+import { getEntries, createEntry, getPin, setPin as savePin } from "@/lib/storage";
+import { BookOpen, Menu } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import EntryEditor from "@/components/EntryEditor";
-import CalendarView from "@/components/CalendarView";
+import Dashboard from "@/components/Dashboard";
 import YearlyOverview from "@/components/YearlyOverview";
-import ThemeToggle from "@/components/ThemeToggle";
-import MoodIcon from "@/components/MoodIcon";
+import ThemeSelector from "@/components/ThemeSelector";
+import PinLock from "@/components/PinLock";
 
 export default function Home() {
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -18,54 +18,62 @@ export default function Home() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showYearly, setShowYearly] = useState(false);
-  const [view, setView] = useState<"calendar" | "editor">("calendar");
+  
+  // Pin Lock state
+  const [isLocked, setIsLocked] = useState(false);
+  const [pinHash, setPinHash] = useState<string | null>(null);
 
   useEffect(() => {
     setEntries(getEntries());
+    const savedPin = getPin();
+    if (savedPin) {
+      setPinHash(savedPin);
+      setIsLocked(true);
+    }
+
+    const today = new Date();
+    const yy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    setSelectedDate(`${yy}-${mm}-${dd}`);
+
     setIsLoaded(true);
   }, []);
-
-  const dateEntries = useMemo(() => {
-    if (!selectedDate) return [];
-    return entries.filter((e) => e.createdAt.slice(0, 10) === selectedDate);
-  }, [entries, selectedDate]);
 
   const selectedEntry = selectedId
     ? entries.find((e) => e.id === selectedId) ?? null
     : null;
 
-  function handleNew() {
+  function handleNew(dateStr?: string | null) {
+    let createdAtObj = new Date();
+    if (typeof dateStr === "string" && dateStr) {
+      const parts = dateStr.split("-");
+      if (parts.length === 3) {
+        createdAtObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), 12, 0, 0);
+      }
+    }
+
     const entry = createEntry({
       title: "",
       content: "",
       mood: "thoughtful",
       tags: [],
+      createdAt: createdAtObj.toISOString(),
     });
     setEntries((prev) => [entry, ...prev]);
     setSelectedId(entry.id);
     setSidebarOpen(false);
-    setView("editor");
   }
 
-  function handleSelect(id: string) {
+  function handleSelect(id: string | null) {
     setSelectedId(id);
     setSidebarOpen(false);
-    setView("editor");
   }
 
   function handleSelectDate(date: string | null) {
     setSelectedDate(date);
-    setSelectedId(null);
     if (date) {
-      const match = entries.find((e) => e.createdAt.slice(0, 10) === date);
-      if (match) {
-        setSelectedId(match.id);
-        setView("editor");
-      } else {
-        setView("calendar");
-      }
-    } else {
-      setView("calendar");
+      setSelectedId(null);
     }
   }
 
@@ -132,6 +140,21 @@ export default function Home() {
     URL.revokeObjectURL(url);
   }
 
+  function handleLockApp() {
+    if (pinHash) {
+      setIsLocked(true);
+    } else {
+      const newPin = window.prompt("Set a 4-digit PIN for your journal:");
+      if (newPin && /^\\d{4}$/.test(newPin)) {
+        savePin(newPin);
+        setPinHash(newPin);
+        setIsLocked(true);
+      } else if (newPin) {
+        alert("Invalid PIN. Must be 4 digits.");
+      }
+    }
+  }
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.key === "n") {
@@ -154,6 +177,10 @@ export default function Home() {
     );
   }
 
+  if (isLocked && pinHash) {
+    return <PinLock correctPin={pinHash} onUnlock={() => setIsLocked(false)} />;
+  }
+
   return (
     <div className="h-full flex" style={{ backgroundColor: "var(--bg)" }}>
       <Sidebar
@@ -164,6 +191,8 @@ export default function Home() {
         onExport={handleExport}
         open={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
+        hasPin={!!pinHash}
+        onLockApp={handleLockApp}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -185,139 +214,28 @@ export default function Home() {
             Life Journal
           </span>
           <div className="ml-auto">
-            <ThemeToggle />
+            <ThemeSelector />
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-          <div
-            className="lg:w-80 xl:w-96 shrink-0 p-4 lg:p-6 overflow-y-auto border-b-2 lg:border-b-0 lg:border-r-2"
-            style={{ borderColor: "var(--border)", backgroundColor: "var(--bg-card)" }}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: "var(--text-tertiary)" }}>
-                <CalendarDays size={14} />
-                Journal Calendar
-              </h2>
-              {selectedDate && (
-                <button
-                  onClick={() => handleSelectDate(null)}
-                  className="text-xs font-medium px-2 py-1 rounded-lg transition-colors"
-                  style={{ color: "var(--text-secondary)", backgroundColor: "var(--bg-hover)" }}
-                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = "var(--border)"}
-                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = "var(--bg-hover)"}
-                >
-                  Clear date
-                </button>
-              )}
-            </div>
-
-            <CalendarView
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {selectedId && selectedEntry ? (
+            <EntryEditor
+              entry={selectedEntry}
+              onDelete={handleDelete}
+              onUpdate={handleUpdate}
+              key={selectedEntry.id}
+            />
+          ) : (
+            <Dashboard
               entries={entries}
               selectedDate={selectedDate}
               onSelectDate={handleSelectDate}
               onOpenYearly={() => setShowYearly(true)}
+              onSelectEntry={handleSelect}
+              onNew={handleNew}
             />
-
-            {selectedDate && (
-              <div className="mt-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-tertiary)" }}>
-                    {dateEntries.length > 0
-                      ? `${dateEntries.length} ${dateEntries.length === 1 ? "entry" : "entries"} on this day`
-                      : "No entries on this day"}
-                  </h3>
-                  {dateEntries.length === 0 && (
-                    <button
-                      onClick={handleNew}
-                      className="text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors"
-                      style={{ backgroundColor: "var(--accent)", color: "#fff" }}
-                      onMouseOver={(e) => e.currentTarget.style.opacity = "0.9"}
-                      onMouseOut={(e) => e.currentTarget.style.opacity = "1"}
-                    >
-                      <Plus size={12} />
-                      Write now
-                    </button>
-                  )}
-                </div>
-
-                {dateEntries.length > 0 && (
-                  <div className="space-y-1 max-h-[200px] overflow-y-auto">
-                    {dateEntries.map((entry) => (
-                      <button
-                        key={entry.id}
-                        onClick={() => { setSelectedId(entry.id); setView("editor"); }}
-                        className="w-full text-left px-3 py-2 rounded-xl border transition-all text-sm"
-                        style={{
-                          backgroundColor: selectedId === entry.id ? "var(--accent-bg)" : "transparent",
-                          borderColor: selectedId === entry.id ? "var(--accent)" : "var(--border-light)",
-                        }}
-                        onMouseOver={(e) => {
-                          if (selectedId !== entry.id) {
-                            e.currentTarget.style.backgroundColor = "var(--bg-hover)";
-                          }
-                        }}
-                        onMouseOut={(e) => {
-                          if (selectedId !== entry.id) {
-                            e.currentTarget.style.backgroundColor = "transparent";
-                          }
-                        }}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold truncate" style={{ color: "var(--text)" }}>
-                            {entry.title || "Untitled"}
-                          </span>
-                          <span className="ml-auto">
-                            <MoodIcon mood={entry.mood} size={18} />
-                          </span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-            {view === "editor" && selectedEntry ? (
-              <EntryEditor
-                entry={selectedEntry}
-                onDelete={handleDelete}
-                onUpdate={handleUpdate}
-                key={selectedEntry.id}
-              />
-            ) : (
-              <div className="flex-1 flex items-center justify-center p-8">
-                <div className="text-center max-w-sm">
-                  <CalendarDays size={64} className="mx-auto mb-6" style={{ color: "var(--text-tertiary)" }} />
-                  <h2 className="text-xl font-bold mb-2" style={{ color: "var(--text)" }}>
-                    {selectedDate ? "No entry for this day" : "Welcome to Life Journal"}
-                  </h2>
-                  <p className="text-sm mb-6" style={{ color: "var(--text-secondary)" }}>
-                    {selectedDate
-                      ? "Click the button above to write your first entry for this day."
-                      : "Select a date on the calendar, or create a new entry from the sidebar."}
-                  </p>
-                  {!selectedDate && (
-                    <button
-                      onClick={handleNew}
-                      className="btn-accent-glow inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all"
-                      style={{
-                        backgroundColor: "var(--accent)",
-                        color: "#fff",
-                      }}
-                      onMouseOver={(e) => e.currentTarget.style.opacity = "0.9"}
-                      onMouseOut={(e) => e.currentTarget.style.opacity = "1"}
-                    >
-                      <Plus size={16} />
-                      Write your first entry
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
 

@@ -35,31 +35,19 @@ export default function TagInput({ tags, onChange }: TagInputProps) {
 
   return (
     <div
-      className="flex flex-wrap items-center gap-1.5 px-3 py-2 rounded-xl border-2 transition-colors min-h-[42px]"
-      style={{
-        backgroundColor: "var(--bg-card)",
-        borderColor: "var(--border)",
-      }}
-      onFocus={(e) => e.currentTarget.style.borderColor = "var(--accent)"}
-      onBlur={(e) => e.currentTarget.style.borderColor = "var(--border)"}
+      className="input-field flex flex-wrap items-center gap-1.5 min-h-[42px] focus-within:ring-2 focus-within:ring-[var(--accent)] focus-within:border-[var(--accent)]"
     >
       {tags.map((tag) => (
         <span
           key={tag}
-          className="flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-medium border"
-          style={{
-            backgroundColor: "var(--accent-bg)",
-            color: "var(--accent-text)",
-            borderColor: "var(--accent)",
-          }}
+          className="badge badge-primary"
         >
           #{tag}
           <button
             onClick={() => removeTag(tag)}
-            className="transition-colors leading-none hover:opacity-70"
-            style={{ color: "var(--accent-text)" }}
+            className="hover:opacity-70 flex items-center justify-center p-0.5 rounded-full"
           >
-            <X size={12} />
+            <X size={10} />
           </button>
         </span>
       ))}
@@ -68,8 +56,7 @@ export default function TagInput({ tags, onChange }: TagInputProps) {
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={tags.length === 0 ? "Add tags…" : ""}
-        className="flex-1 min-w-[80px] bg-transparent border-none outline-none text-sm py-0.5"
-        style={{ color: "var(--text)" }}
+        className="flex-1 min-w-[80px] bg-transparent border-none outline-none text-sm py-0.5 text-[var(--text)]"
       />
     </div>
   );

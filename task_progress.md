@@ -1,0 +1,7 @@
+- [ ] Read existing files to understand current structure
+- [ ] Plan theme/design direction
+- [ ] Update globals.css with new theme + dark mode
+- [ ] Update page.tsx with calendar on homepage
+- [ ] Add yearly overview component
+- [ ] Update layout.tsx for dark mode support
+- [ ] Test and verify

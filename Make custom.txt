@@ -137,4 +137,11 @@ Convert unsupported formats -> later)
 Recognize Markdown while typing.
 
 
-
+features to be implemented
+1. pin the note features
+2. auto arrange the note base on date time (latest date time first)
+3.smtp server and reminders features
+4 for the style of the website  , like previosly i opened it in dark mode and certain accent color same goes for the when i open it next time
+5.account based notes saving so that i can share my notes across devices 
+6.image state like i resize any image it should stay the ame when reopening the note, show custom cursor when resizing
+7. have colur based flags feature 

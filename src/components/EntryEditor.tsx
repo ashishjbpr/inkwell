@@ -15,7 +15,8 @@ import {
   CloudLightning,
   CloudSnow,
   Wind,
-  Code
+  Code,
+  Pin
 } from "lucide-react";
 import MoodPicker from "./MoodPicker";
 import TagInput from "./TagInput";
@@ -32,6 +33,15 @@ const weatherOptionsWithIcons = WEATHER_OPTIONS.map(opt => {
   return { ...opt, icon: <IconCmp size={16} /> };
 });
 
+const FLAG_COLORS = [
+  { value: "", label: "None" },
+  { value: "#EF4444", label: "Red" },
+  { value: "#F59E0B", label: "Orange" },
+  { value: "#10B981", label: "Green" },
+  { value: "#3B82F6", label: "Blue" },
+  { value: "#8B5CF6", label: "Purple" }
+];
+
 interface EntryEditorProps {
   entry: Entry | null;
   onDelete: (id: string) => void;
@@ -44,6 +54,8 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
   const [mood, setMood] = useState<Mood | null>(null);
   const [tags, setTags] = useState<string[]>([]);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isPinned, setIsPinned] = useState(false);
+  const [colorFlag, setColorFlag] = useState("");
   const [location, setLocation] = useState("");
   const [weather, setWeather] = useState("");
   const [saved, setSaved] = useState(true);
@@ -58,6 +70,8 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
       setMood(entry.mood);
       setTags(entry.tags);
       setIsFavorite(entry.isFavorite || false);
+      setIsPinned(entry.isPinned || false);
+      setColorFlag(entry.colorFlag || "");
       setLocation(entry.location || "");
       setWeather(entry.weather || "");
       setSaved(true);
@@ -71,7 +85,9 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
       c: string, 
       m: Mood | null, 
       tg: string[], 
-      fav: boolean, 
+      fav: boolean,
+      pin: boolean,
+      flag: string,
       loc: string, 
       wea: string
     ) => {
@@ -82,6 +98,8 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
         mood: m,
         tags: tg,
         isFavorite: fav,
+        isPinned: pin,
+        colorFlag: flag,
         location: loc,
         weather: wea
       });
@@ -98,55 +116,70 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
     c: string, 
     m: Mood | null, 
     tg: string[], 
-    fav: boolean, 
+    fav: boolean,
+    pin: boolean,
+    flag: string,
     loc: string, 
     wea: string
   ) {
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => doSave(t, c, m, tg, fav, loc, wea), 800);
+    saveTimer.current = setTimeout(() => doSave(t, c, m, tg, fav, pin, flag, loc, wea), 800);
   }
 
   function handleTitleChange(val: string) {
     setTitle(val);
     setSaved(false);
-    debounceSave(val, content, mood, tags, isFavorite, location, weather);
+    debounceSave(val, content, mood, tags, isFavorite, isPinned, colorFlag, location, weather);
   }
 
   function handleContentChange(html: string) {
     setContent(html);
     setSaved(false);
-    debounceSave(title, html, mood, tags, isFavorite, location, weather);
+    debounceSave(title, html, mood, tags, isFavorite, isPinned, colorFlag, location, weather);
   }
 
   function handleMoodChange(val: Mood) {
     setMood(val);
     setSaved(false);
-    debounceSave(title, content, val, tags, isFavorite, location, weather);
+    debounceSave(title, content, val, tags, isFavorite, isPinned, colorFlag, location, weather);
   }
 
   function handleTagsChange(val: string[]) {
     setTags(val);
     setSaved(false);
-    debounceSave(title, content, mood, val, isFavorite, location, weather);
+    debounceSave(title, content, mood, val, isFavorite, isPinned, colorFlag, location, weather);
   }
 
   function toggleFavorite() {
     const newVal = !isFavorite;
     setIsFavorite(newVal);
     setSaved(false);
-    debounceSave(title, content, mood, tags, newVal, location, weather);
+    debounceSave(title, content, mood, tags, newVal, isPinned, colorFlag, location, weather);
+  }
+
+  function togglePinned() {
+    const newVal = !isPinned;
+    setIsPinned(newVal);
+    setSaved(false);
+    debounceSave(title, content, mood, tags, isFavorite, newVal, colorFlag, location, weather);
+  }
+
+  function handleColorFlagChange(val: string) {
+    setColorFlag(val);
+    setSaved(false);
+    debounceSave(title, content, mood, tags, isFavorite, isPinned, val, location, weather);
   }
 
   function handleLocationChange(val: string) {
     setLocation(val);
     setSaved(false);
-    debounceSave(title, content, mood, tags, isFavorite, val, weather);
+    debounceSave(title, content, mood, tags, isFavorite, isPinned, colorFlag, val, weather);
   }
 
   function handleWeatherChange(val: string) {
     setWeather(val);
     setSaved(false);
-    debounceSave(title, content, mood, tags, isFavorite, location, val);
+    debounceSave(title, content, mood, tags, isFavorite, isPinned, colorFlag, location, val);
   }
 
   function handleDelete() {
@@ -257,13 +290,36 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
           <div className="w-px h-6 bg-[var(--border)]" />
 
           <button
+            onClick={togglePinned}
+            className="btn btn-icon btn-ghost"
+            style={{ color: isPinned ? "var(--accent)" : "var(--text-secondary)" }}
+            title={isPinned ? "Unpin" : "Pin Note"}
+          >
+            <Pin size={18} className={isPinned ? "-rotate-45" : ""} fill={isPinned ? "currentColor" : "none"} />
+          </button>
+
+          <button
             onClick={toggleFavorite}
             className="btn btn-icon btn-ghost"
             style={{ color: isFavorite ? "var(--accent)" : "var(--text-secondary)" }}
             title={isFavorite ? "Unfavorite" : "Favorite"}
           >
-            <Star size={18} fill={isFavorite ? "var(--accent)" : "none"} />
+            <Star size={18} fill={isFavorite ? "currentColor" : "none"} />
           </button>
+          
+          <div className="w-px h-6 bg-[var(--border)] mx-1" />
+          
+          <div className="flex items-center gap-1.5 px-2">
+            {FLAG_COLORS.filter(c => c.value).map(c => (
+               <button
+                 key={c.value}
+                 onClick={() => handleColorFlagChange(colorFlag === c.value ? "" : c.value)}
+                 className={`w-4 h-4 rounded-full transition-transform ${colorFlag === c.value ? "scale-125 ring-2 ring-offset-2 ring-offset-[var(--bg-card)] ring-[var(--accent)]" : "hover:scale-110"}`}
+                 style={{ backgroundColor: c.value }}
+                 title={`Flag ${c.label}`}
+               />
+            ))}
+          </div>
           
           <div className="ml-auto flex items-center gap-3">
             <span

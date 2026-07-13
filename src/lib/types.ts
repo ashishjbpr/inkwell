@@ -7,6 +7,8 @@ export interface Entry {
   mood: Mood;
   tags: string[];
   isFavorite?: boolean;
+  isPinned?: boolean;
+  colorFlag?: string;
   location?: string;
   weather?: string;
   createdAt: string; // ISO string

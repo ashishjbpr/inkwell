@@ -25,6 +25,24 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`h-full ${lora.variable} ${inter.variable}`} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                var storedDark = localStorage.getItem("journal-dark-mode") === "true";
+                var storedTheme = localStorage.getItem("journal-color-theme") || "theme-indigo";
+                if (storedTheme && storedTheme !== "theme-indigo") {
+                  document.documentElement.classList.add(storedTheme);
+                }
+                if (storedDark) {
+                  document.documentElement.classList.add("dark");
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
+      </head>
       <body className="h-full overflow-hidden font-sans antialiased">{children}</body>
     </html>
   );

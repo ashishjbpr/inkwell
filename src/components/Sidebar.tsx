@@ -11,7 +11,8 @@ import {
   BookOpen,
   LayoutDashboard,
   Lock,
-  Star
+  Star,
+  Pin
 } from "lucide-react";
 import ThemeSelector from "@/components/ThemeSelector";
 import MoodIcon from "@/components/MoodIcon";
@@ -44,7 +45,7 @@ export default function Sidebar({
   const [showFavorites, setShowFavorites] = useState(false);
 
   const filtered = useMemo(() => {
-    return entries.filter((e) => {
+    const results = entries.filter((e) => {
       const q = search.toLowerCase();
       const matchesSearch =
         !q ||
@@ -54,6 +55,12 @@ export default function Sidebar({
       const matchesMood = moodFilter === "all" || e.mood === moodFilter;
       const matchesFavorite = !showFavorites || e.isFavorite;
       return matchesSearch && matchesMood && matchesFavorite;
+    });
+
+    return results.sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
   }, [entries, search, moodFilter, showFavorites]);
 
@@ -193,6 +200,8 @@ export default function Sidebar({
                     {formatDate(entry.createdAt)}
                   </span>
                   <div className={`flex items-center gap-1 ${selectedId === entry.id ? 'text-[var(--accent-text)]' : 'text-[var(--accent)]'}`}>
+                    {entry.colorFlag && <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: entry.colorFlag }} />}
+                    {entry.isPinned && <Pin size={12} className="-rotate-45" fill="currentColor" />}
                     {entry.isFavorite && <Star size={12} fill="currentColor" />}
                     <MoodIcon mood={entry.mood} size={18} />
                   </div>

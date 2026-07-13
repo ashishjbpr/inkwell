@@ -144,6 +144,7 @@ export default function Toolbar({ editor }: ToolbarProps) {
 
       // Prevent editor selection flicker while dragging.
       e.preventDefault();
+      document.body.style.cursor = 'ew-resize';
     };
 
     const handleMouseMove = (e: MouseEvent) => {
@@ -178,6 +179,7 @@ export default function Toolbar({ editor }: ToolbarProps) {
     const handleMouseUp = () => {
       if (!resizeStateRef.current.active) return;
       resizeStateRef.current.active = false;
+      document.body.style.cursor = '';
     };
 
     root.addEventListener('mousedown', handleMouseDown, true);

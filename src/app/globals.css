@@ -6,32 +6,45 @@
    CSS Variables — Global Foundation
    ============================== */
 :root {
-  /* Premium Neutral Light Mode */
-  --bg: #fdfdfd; /* subtle off‑white */
+  /* Cohesive Neutral Light */
+  --bg: #f7f7fb;
   --bg-card: #ffffff;
-  --bg-sidebar: #f2f2f2; /* light gray for sidebar */
-  --bg-hover: #eaeaea; /* gentle hover shade */
-  --text: #171717;
-  --text-secondary: #52525b;
-  --text-tertiary: #a1a1aa;
-  --border: #e5e7eb;
-  --border-light: #f3f4f6;
-  --shadow: rgba(0, 0, 0, 0.04);
+  --bg-sidebar: #f2f3f7;
+  --bg-hover: #eceef5;
+
+  --text: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #64748b;
+
+  --border: #e5e7f1;
+  --border-light: #f1f2f7;
+
+  /* Used for subtle elevation */
+  --shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+
+  /* Focus ring */
+  --ring-offset: rgba(247, 247, 251, 1);
 }
 
 .dark {
-  /* Layered Dark Mode Surfaces */
-  --bg: #0a0a0c; /* deeper base */
-  --bg-sidebar: #141416; /* dark sidebar */
-  --bg-card: #1a1a1e; /* card surface */
-  --bg-hover: #2b2b30; /* hover surface */
-  --text: #e4e4e7;
-  --text-secondary: #a1a1aa;
-  --text-tertiary: #71717a;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-light: rgba(255, 255, 255, 0.04);
-  --shadow: rgba(0, 0, 0, 0.5);
+  /* Cohesive Neutral Dark */
+  --bg: #0b1020;
+  --bg-card: #0f172a;
+  --bg-sidebar: #0c1326;
+  --bg-hover: rgba(148, 163, 184, 0.14);
+
+  --text: #e6e9f5;
+  --text-secondary: #a8b3cf;
+  --text-tertiary: #7f8aa8;
+
+  --border: rgba(148, 163, 184, 0.22);
+  --border-light: rgba(148, 163, 184, 0.12);
+
+  --shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+
+  --ring-offset: rgba(11, 16, 32, 1);
 }
+
 
 /* ==============================
    Themes (Accent Overrides Only)
@@ -103,6 +116,8 @@
 
 /* Components mapped dynamically to Accent Variables */
 :root {
+
+
   --cal-bg: var(--bg-card);
   --cal-border: var(--border);
   --cal-day-hover: var(--bg-hover);
@@ -143,16 +158,19 @@
 @layer components {
   /* Premium Buttons */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold transition-all duration-150 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)] disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98];
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold transition-all duration-150 rounded-xl outline-none active:scale-[0.98];
+    @apply focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2;
+    ring-offset-color: var(--ring-offset);
   }
   
   .btn-primary {
-    @apply text-white shadow-sm focus-visible:ring-[var(--accent)];
+    @apply text-white shadow-sm;
     background-color: var(--accent);
   }
   .btn-primary:hover {
     background-color: var(--accent-hover);
   }
+
 
   .btn-secondary {
     @apply shadow-sm;

@@ -14,7 +14,8 @@ import {
   CloudRain,
   CloudLightning,
   CloudSnow,
-  Wind
+  Wind,
+  Code
 } from "lucide-react";
 import MoodPicker from "./MoodPicker";
 import TagInput from "./TagInput";
@@ -164,7 +165,7 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
     return text.split(/\s+/).length;
   }
 
-  function handleExportPDF() {
+  function handleExportHTML() {
     if (!entry) return;
     const moodInfo = MOODS.find((m) => m.value === entry.mood);
     const exportContent = `
@@ -201,6 +202,32 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
     const a = document.createElement("a");
     a.href = url;
     a.download = `journal-entry-${entry.id.slice(0, 8)}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function handleExportXML() {
+    if (!entry) return;
+    const exportContent = `<?xml version="1.0" encoding="UTF-8"?>
+<entry>
+  <id>${entry.id}</id>
+  <title><![CDATA[${entry.title}]]></title>
+  <createdAt>${entry.createdAt}</createdAt>
+  <updatedAt>${entry.updatedAt}</updatedAt>
+  <mood>${entry.mood || ""}</mood>
+  <location><![CDATA[${entry.location || ""}]]></location>
+  <weather><![CDATA[${entry.weather || ""}]]></weather>
+  <tags>
+    ${entry.tags.map(t => `<tag><![CDATA[${t}]]></tag>`).join("\\n    ")}
+  </tags>
+  <content><![CDATA[${entry.content}]]></content>
+</entry>`;
+
+    const blob = new Blob([exportContent], { type: "application/xml" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `journal-entry-${entry.id.slice(0, 8)}.xml`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -317,13 +344,24 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
             : "Past entry"}
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleExportPDF}
-            className="btn btn-secondary text-xs py-1.5 px-3"
-          >
-            <FileText size={14} />
-            Export
-          </button>
+          <div className="flex items-center gap-1 bg-[var(--bg-hover)] rounded-xl p-1 border border-[var(--border)]">
+            <button
+              onClick={handleExportHTML}
+              className="btn btn-secondary text-xs py-1.5 px-3 border-none bg-transparent hover:bg-[var(--bg-card)]"
+              title="Export as HTML"
+            >
+              <FileText size={14} />
+              HTML
+            </button>
+            <button
+              onClick={handleExportXML}
+              className="btn btn-secondary text-xs py-1.5 px-3 border-none bg-transparent hover:bg-[var(--bg-card)]"
+              title="Export as XML"
+            >
+              <Code size={14} />
+              XML
+            </button>
+          </div>
           <button
             onClick={handleDelete}
             className={`btn text-xs py-1.5 px-3 ${confirmDelete ? 'btn-danger' : 'btn-secondary'}`}

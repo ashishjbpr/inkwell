@@ -8,6 +8,7 @@ import Sidebar from "@/components/Sidebar";
 import EntryEditor from "@/components/EntryEditor";
 import Dashboard from "@/components/Dashboard";
 import YearlyOverview from "@/components/YearlyOverview";
+import KnowledgeGraph from "@/components/KnowledgeGraph";
 import ThemeSelector from "@/components/ThemeSelector";
 import PinLock from "@/components/PinLock";
 import SetPinModal from "@/components/SetPinModal";
@@ -20,6 +21,7 @@ export default function Home() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showYearly, setShowYearly] = useState(false);
+  const [showGraph, setShowGraph] = useState(false);
   
   // Pin Lock state
   const [isLocked, setIsLocked] = useState(false);
@@ -246,6 +248,7 @@ export default function Home() {
               selectedDate={selectedDate}
               onSelectDate={handleSelectDate}
               onOpenYearly={() => setShowYearly(true)}
+              onOpenGraph={() => setShowGraph(true)}
               onSelectEntry={handleSelect}
               onNew={handleNew}
             />
@@ -257,6 +260,14 @@ export default function Home() {
         <YearlyOverview
           entries={entries}
           onClose={() => setShowYearly(false)}
+        />
+      )}
+
+      {showGraph && (
+        <KnowledgeGraph
+          entries={entries}
+          onClose={() => setShowGraph(false)}
+          onSelectEntry={handleSelect}
         />
       )}
 

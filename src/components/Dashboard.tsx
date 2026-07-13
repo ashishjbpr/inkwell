@@ -6,13 +6,14 @@ import CalendarView from "./CalendarView";
 import MoodIcon from "./MoodIcon";
 import FeaturesOverview from "./FeaturesOverview";
 import { getStreak } from "@/lib/storage";
-import { Flame, Activity, LayoutGrid, CalendarDays, Quote as QuoteIcon } from "lucide-react";
+import { Flame, Activity, LayoutGrid, CalendarDays, Quote as QuoteIcon, Network } from "lucide-react";
 
 interface DashboardProps {
   entries: Entry[];
   selectedDate: string | null;
   onSelectDate: (date: string | null) => void;
   onOpenYearly: () => void;
+  onOpenGraph: () => void;
   onSelectEntry: (id: string) => void;
   onNew: (date?: string | null) => void;
 }
@@ -22,6 +23,7 @@ export default function Dashboard({
   selectedDate,
   onSelectDate,
   onOpenYearly,
+  onOpenGraph,
   onSelectEntry,
   onNew,
 }: DashboardProps) {
@@ -187,6 +189,21 @@ export default function Dashboard({
                 </p>
               )}
             </div>
+          </div>
+
+          <div className="card text-center">
+            <Network size={32} className="mx-auto mb-4" style={{ color: "var(--text-tertiary)" }} />
+            <h3 className="font-bold mb-2" style={{ color: "var(--text)" }}>Knowledge Graph</h3>
+            <p className="text-sm mb-4" style={{ color: "var(--text-secondary)" }}>
+              See how your entries connect through shared tags and moods.
+            </p>
+            <button
+              onClick={onOpenGraph}
+              className="btn btn-secondary w-full"
+              style={{ borderColor: "var(--accent)", color: "var(--accent)" }}
+            >
+              Open Graph
+            </button>
           </div>
 
           <div className="card text-center">

@@ -617,6 +617,11 @@ body {
   max-height: 200px;
 }
 
+.cal-picker-select option {
+  color: var(--text);
+  background: var(--bg-card);
+}
+
 .cal-nav-btn {
   width: 32px;
   height: 32px;

@@ -67,9 +67,19 @@ export default function CalendarView({
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [showPicker, setShowPicker] = useState(false);
+  const [isDark, setIsDark] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
 
   const grid = useMemo(() => getMonthGrid(viewYear, viewMonth), [viewYear, viewMonth]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const update = () => setIsDark(root.classList.contains("dark"));
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
 
   const yearOptions = useMemo(() => {
     const start = today.getFullYear() - 100;
@@ -149,6 +159,7 @@ export default function CalendarView({
             <div className="cal-picker">
               <select
                 className="cal-picker-select"
+                style={{ colorScheme: isDark ? "dark" : "light" }}
                 value={viewMonth}
                 onChange={(e) => setViewMonth(Number(e.target.value))}
                 aria-label="Select month"
@@ -159,6 +170,7 @@ export default function CalendarView({
               </select>
               <select
                 className="cal-picker-select"
+                style={{ colorScheme: isDark ? "dark" : "light" }}
                 value={viewYear}
                 onChange={(e) => setViewYear(Number(e.target.value))}
                 aria-label="Select year"

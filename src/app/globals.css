@@ -856,6 +856,17 @@ body {
   border-radius: 3px;
   border: 1.5px solid transparent;
   transition: border-color 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.yearly-cell-day {
+  font-size: 0.6rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--text-secondary);
+  pointer-events: none;
 }
 
 .yearly-cell-empty {
@@ -866,6 +877,10 @@ body {
 .yearly-cell-done {
   background: var(--yearly-cell-done);
   opacity: 0.7;
+}
+
+.yearly-cell-done .yearly-cell-day {
+  color: white;
 }
 
 .yearly-cell-missed {

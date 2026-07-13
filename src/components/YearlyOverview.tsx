@@ -124,7 +124,9 @@ export default function YearlyOverview({ entries, onClose }: YearlyOverviewProps
                       key={dateStr}
                       className={`yearly-cell ${hasEntry ? "yearly-cell-done" : "yearly-cell-missed"} ${isToday ? "yearly-cell-today" : ""}`}
                       title={`${dateStr}${hasEntry ? " ✓" : " ✗"}`}
-                    />
+                    >
+                      <span className="yearly-cell-day">{day}</span>
+                    </div>
                   );
                 })}
               </div>

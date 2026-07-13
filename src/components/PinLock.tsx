@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Lock, Delete } from "lucide-react";
 
 interface PinLockProps {
@@ -35,6 +35,18 @@ export default function PinLock({ correctPin, onUnlock }: PinLockProps) {
       setError(false);
     }
   }
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key >= "0" && e.key <= "9") {
+        handleNumber(Number(e.key));
+      } else if (e.key === "Backspace") {
+        handleDelete();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [pin, correctPin]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--bg)] text-[var(--text)]">

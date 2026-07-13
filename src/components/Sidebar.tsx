@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
+import Link from "next/link";
 import { Entry, MOODS, Mood } from "@/lib/types";
+import { exportEntryHTML, exportEntryXML } from "@/lib/export";
 import { format, isToday, isYesterday, parseISO } from "date-fns";
 import {
   Search,
@@ -12,9 +14,13 @@ import {
   LayoutDashboard,
   Lock,
   Star,
-  Pin
+  Pin,
+  MoreVertical,
+  Code,
+  Terminal
 } from "lucide-react";
 import ThemeSelector from "@/components/ThemeSelector";
+import PeacockFeatherIcon from "@/components/icons/PeacockFeatherIcon";
 import MoodIcon from "@/components/MoodIcon";
 
 interface SidebarProps {
@@ -23,6 +29,7 @@ interface SidebarProps {
   onSelect: (id: string | null) => void;
   onNew: () => void;
   onExport: () => void;
+  onTogglePin: (id: string) => void;
   open: boolean;
   onToggle: () => void;
   hasPin: boolean;
@@ -35,6 +42,7 @@ export default function Sidebar({
   onSelect,
   onNew,
   onExport,
+  onTogglePin,
   open,
   onToggle,
   hasPin,
@@ -43,6 +51,19 @@ export default function Sidebar({
   const [search, setSearch] = useState("");
   const [moodFilter, setMoodFilter] = useState<Mood | "all">("all");
   const [showFavorites, setShowFavorites] = useState(false);
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpenId) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpenId(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpenId]);
 
   const filtered = useMemo(() => {
     const results = entries.filter((e) => {
@@ -93,8 +114,8 @@ export default function Sidebar({
           <div className="flex items-center justify-between mb-3">
             <div>
               <h1 className="text-lg font-bold flex items-center gap-2" style={{ color: "var(--text)" }}>
-                <BookOpen size={22} style={{ color: "var(--accent)" }} />
-                Life Journal
+                <PeacockFeatherIcon size={22} />
+                Inkwell
               </h1>
             </div>
             <div className="flex items-center gap-2">
@@ -190,20 +211,34 @@ export default function Sidebar({
             </div>
           ) : (
             filtered.map((entry) => (
-              <button
+              <div
                 key={entry.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => onSelect(entry.id)}
+                onKeyDown={(e) => { if (e.key === "Enter") onSelect(entry.id); }}
                 className={`list-item relative ${selectedId === entry.id ? 'list-item-active' : ''}`}
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-medium text-[var(--text-tertiary)]">
                     {formatDate(entry.createdAt)}
                   </span>
-                  <div className={`flex items-center gap-1 ${selectedId === entry.id ? 'text-[var(--accent-text)]' : 'text-[var(--accent)]'}`}>
+                  <div className={`flex items-center gap-1.5 ${selectedId === entry.id ? 'text-[var(--accent-text)]' : 'text-[var(--accent)]'}`}>
                     {entry.colorFlag && <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: entry.colorFlag }} />}
                     {entry.isPinned && <Pin size={12} className="-rotate-45" fill="currentColor" />}
                     {entry.isFavorite && <Star size={12} fill="currentColor" />}
                     <MoodIcon mood={entry.mood} size={18} />
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuOpenId(menuOpenId === entry.id ? null : entry.id);
+                      }}
+                      className="w-5 h-5 -mr-1 rounded-md flex items-center justify-center hover:bg-[var(--bg-hover)]"
+                      title="More options"
+                    >
+                      <MoreVertical size={14} />
+                    </button>
                   </div>
                 </div>
                 <p className={`text-sm font-semibold truncate ${selectedId === entry.id ? 'text-[var(--accent-text)]' : 'text-[var(--text)]'}`}>
@@ -224,7 +259,46 @@ export default function Sidebar({
                     ))}
                   </div>
                 )}
-              </button>
+
+                {menuOpenId === entry.id && (
+                  <div
+                    ref={menuRef}
+                    onClick={(e) => e.stopPropagation()}
+                    className="popover-content right-2 top-9 w-44 py-1"
+                  >
+                    <button
+                      onClick={() => {
+                        onTogglePin(entry.id);
+                        setMenuOpenId(null);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-[var(--bg-hover)] text-[var(--text)]"
+                    >
+                      <Pin size={14} className={entry.isPinned ? "-rotate-45" : ""} fill={entry.isPinned ? "currentColor" : "none"} />
+                      {entry.isPinned ? "Unpin Note" : "Pin Note"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        exportEntryHTML(entry);
+                        setMenuOpenId(null);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-[var(--bg-hover)] text-[var(--text)]"
+                    >
+                      <FileDown size={14} />
+                      Export as HTML
+                    </button>
+                    <button
+                      onClick={() => {
+                        exportEntryXML(entry);
+                        setMenuOpenId(null);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-[var(--bg-hover)] text-[var(--text)]"
+                    >
+                      <Code size={14} />
+                      Export as XML
+                    </button>
+                  </div>
+                )}
+              </div>
             ))
           )}
         </div>
@@ -247,6 +321,13 @@ export default function Sidebar({
               {hasPin ? "Lock App" : "Set PIN"}
             </button>
           </div>
+          <Link
+            href="/developers"
+            className="btn btn-secondary w-full text-xs py-2"
+          >
+            <Terminal size={14} />
+            For Developers
+          </Link>
         </div>
       </aside>
     </>

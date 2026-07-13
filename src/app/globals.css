@@ -24,6 +24,19 @@
 
   /* Focus ring */
   --ring-offset: rgba(247, 247, 251, 1);
+
+  /* Papyrus writing surface (light theme = sun-bleached parchment) */
+  --papyrus-base: #ddc38c;
+  --papyrus-highlight: rgba(255, 250, 225, 0.65);
+  --papyrus-shadow-1: rgba(112, 82, 38, 0.28);
+  --papyrus-shadow-2: rgba(112, 82, 38, 0.12);
+  --papyrus-grain-1: rgba(101, 74, 38, 0.045);
+  --papyrus-grain-2: rgba(101, 74, 38, 0.04);
+  --papyrus-inset-1: rgba(90, 65, 30, 0.3);
+  --papyrus-inset-2: rgba(90, 65, 30, 0.18);
+  --papyrus-ink: #3b2c1a;
+  --papyrus-ink-soft: #6b5638;
+  --papyrus-link: #8a4a17;
 }
 
 .dark {
@@ -43,6 +56,19 @@
   --shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
 
   --ring-offset: rgba(11, 16, 32, 1);
+
+  /* Papyrus writing surface (dark theme = aged, candle-lit parchment) */
+  --papyrus-base: #453522;
+  --papyrus-highlight: rgba(200, 165, 105, 0.16);
+  --papyrus-shadow-1: rgba(0, 0, 0, 0.5);
+  --papyrus-shadow-2: rgba(0, 0, 0, 0.32);
+  --papyrus-grain-1: rgba(0, 0, 0, 0.14);
+  --papyrus-grain-2: rgba(0, 0, 0, 0.12);
+  --papyrus-inset-1: rgba(0, 0, 0, 0.6);
+  --papyrus-inset-2: rgba(0, 0, 0, 0.4);
+  --papyrus-ink: #f1e6cf;
+  --papyrus-ink-soft: #cbb693;
+  --papyrus-link: #e8b873;
 }
 
 
@@ -298,6 +324,119 @@
     padding-left: 1rem;
     color: var(--text-secondary);
     font-style: italic;
+  }
+
+  .editor-prose .code-block-node pre {
+    background-color: var(--bg);
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .editor-prose .code-block-node code {
+    font-family: "Courier New", Courier, monospace;
+    background: none;
+    padding: 0;
+    color: var(--text);
+  }
+
+  /* Syntax highlighting (lowlight/highlight.js token classes) */
+  .hljs-comment,
+  .hljs-quote {
+    color: var(--text-tertiary);
+    font-style: italic;
+  }
+  .hljs-keyword,
+  .hljs-selector-tag,
+  .hljs-literal,
+  .hljs-doctag {
+    color: #c678dd;
+  }
+  .hljs-string,
+  .hljs-attr,
+  .hljs-regexp,
+  .hljs-addition {
+    color: #98c379;
+  }
+  .hljs-number,
+  .hljs-built_in,
+  .hljs-symbol {
+    color: #d19a66;
+  }
+  .hljs-title,
+  .hljs-name,
+  .hljs-section,
+  .hljs-selector-id {
+    color: #61afef;
+  }
+  .hljs-variable,
+  .hljs-template-variable,
+  .hljs-type,
+  .hljs-class .hljs-title {
+    color: #e5c07b;
+  }
+  .hljs-deletion,
+  .hljs-meta {
+    color: #e06c75;
+  }
+  .hljs-emphasis {
+    font-style: italic;
+  }
+  .hljs-strong {
+    font-weight: 700;
+  }
+
+  /* Papyrus writing surface — the note area always looks like parchment,
+     shifting between a sun-bleached tone in light mode and an aged,
+     candle-lit tone in dark mode. */
+  .papyrus-surface {
+    background-color: var(--papyrus-base);
+    background-image:
+      radial-gradient(ellipse 120% 90% at 12% -10%, var(--papyrus-highlight), transparent 55%),
+      radial-gradient(ellipse 100% 80% at 90% 110%, var(--papyrus-shadow-1), transparent 55%),
+      radial-gradient(ellipse 60% 50% at 70% 20%, var(--papyrus-shadow-2), transparent 60%),
+      repeating-linear-gradient(90deg, var(--papyrus-grain-1) 0px, transparent 1px, transparent 3px),
+      repeating-linear-gradient(0deg, var(--papyrus-grain-2) 0px, transparent 1px, transparent 3px),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/></svg>");
+    background-blend-mode: normal, normal, normal, multiply, multiply, overlay;
+    box-shadow:
+      inset 0 0 90px var(--papyrus-inset-1),
+      inset 0 0 24px var(--papyrus-inset-2);
+    transition: background-color 300ms ease;
+  }
+
+  .papyrus-surface .editor-prose,
+  .papyrus-surface .editor-prose p,
+  .papyrus-surface .editor-prose li,
+  .papyrus-surface .editor-prose h1,
+  .papyrus-surface .editor-prose h2,
+  .papyrus-surface .editor-prose h3 {
+    color: var(--papyrus-ink);
+  }
+
+  .papyrus-surface .editor-prose blockquote {
+    border-left-color: var(--papyrus-ink-soft);
+    color: var(--papyrus-ink-soft);
+  }
+
+  .papyrus-surface .editor-prose a {
+    color: var(--papyrus-link);
+  }
+
+  .papyrus-surface [contenteditable]:empty::before,
+  .papyrus-surface .is-editor-empty::before {
+    color: var(--papyrus-ink-soft);
+    opacity: 0.7;
+  }
+
+  .papyrus-surface .editor-prose .code-block-node pre {
+    background-color: rgba(45, 34, 20, 0.94);
+    color: #f1e6cf;
+  }
+
+  .papyrus-surface .editor-prose .code-block-node code {
+    color: #f1e6cf;
   }
 }
 

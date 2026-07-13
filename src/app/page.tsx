@@ -2,14 +2,16 @@
 
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { Entry } from "@/lib/types";
-import { getEntries, createEntry, getPin, setPin as savePin } from "@/lib/storage";
-import { BookOpen, Menu } from "lucide-react";
+import { getEntries, createEntry, updateEntry, getPin, setPin as savePin } from "@/lib/storage";
+import { Menu } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import EntryEditor from "@/components/EntryEditor";
 import Dashboard from "@/components/Dashboard";
 import YearlyOverview from "@/components/YearlyOverview";
 import ThemeSelector from "@/components/ThemeSelector";
 import PinLock from "@/components/PinLock";
+import SetPinModal from "@/components/SetPinModal";
+import PeacockFeatherIcon from "@/components/icons/PeacockFeatherIcon";
 
 export default function Home() {
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -22,6 +24,7 @@ export default function Home() {
   // Pin Lock state
   const [isLocked, setIsLocked] = useState(false);
   const [pinHash, setPinHash] = useState<string | null>(null);
+  const [showSetPinModal, setShowSetPinModal] = useState(false);
 
   useEffect(() => {
     setEntries(getEntries());
@@ -88,13 +91,23 @@ export default function Home() {
     );
   }, []);
 
+  const handleTogglePin = useCallback((id: string) => {
+    setEntries((prev) => {
+      const target = prev.find((e) => e.id === id);
+      if (!target) return prev;
+      const updated = updateEntry(id, { isPinned: !target.isPinned });
+      if (!updated) return prev;
+      return prev.map((e) => (e.id === id ? updated : e));
+    });
+  }, []);
+
   function handleExport() {
     if (entries.length === 0) return;
     const allContent = `
       <html>
       <head>
         <meta charset="utf-8">
-        <title>Life Journal Export</title>
+        <title>Inkwell Export</title>
         <style>
           @page { margin: 20mm; }
           body { font-family: 'Inter', -apple-system, sans-serif; color: #1e1b2e; line-height: 1.8; max-width: 700px; margin: 0 auto; padding: 40px 20px; }
@@ -111,7 +124,7 @@ export default function Home() {
         </style>
       </head>
       <body>
-        <h1>Life Journal</h1>
+        <h1>Inkwell</h1>
         <p class="subtitle">${entries.length} entries · Exported ${new Date().toLocaleDateString()}</p>
         ${entries
           .map(
@@ -126,7 +139,7 @@ export default function Home() {
         `
           )
           .join("")}
-        <p style="text-align:center;color:#9d96b8;font-size:12px;margin-top:48px;">Made with Life Journal — 100% private, 100% yours.</p>
+        <p style="text-align:center;color:#9d96b8;font-size:12px;margin-top:48px;">Made with Inkwell — 100% private, 100% yours.</p>
       </body>
       </html>
     `;
@@ -144,15 +157,15 @@ export default function Home() {
     if (pinHash) {
       setIsLocked(true);
     } else {
-      const newPin = window.prompt("Set a 4-digit PIN for your journal:");
-      if (newPin && /^\\d{4}$/.test(newPin)) {
-        savePin(newPin);
-        setPinHash(newPin);
-        setIsLocked(true);
-      } else if (newPin) {
-        alert("Invalid PIN. Must be 4 digits.");
-      }
+      setShowSetPinModal(true);
     }
+  }
+
+  function handlePinConfirmed(newPin: string) {
+    savePin(newPin);
+    setPinHash(newPin);
+    setShowSetPinModal(false);
+    setIsLocked(true);
   }
 
   useEffect(() => {
@@ -170,7 +183,7 @@ export default function Home() {
     return (
       <div className="h-full flex items-center justify-center" style={{ backgroundColor: "var(--bg)" }}>
         <div className="text-center">
-          <BookOpen size={64} className="mx-auto mb-4 animate-pulse" style={{ color: "var(--accent)" }} />
+          <PeacockFeatherIcon size={64} className="mx-auto mb-4 animate-pulse" />
           <p className="italic" style={{ color: "var(--text-secondary)" }}>Opening your journal…</p>
         </div>
       </div>
@@ -189,6 +202,7 @@ export default function Home() {
         onSelect={handleSelect}
         onNew={handleNew}
         onExport={handleExport}
+        onTogglePin={handleTogglePin}
         open={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
         hasPin={!!pinHash}
@@ -210,8 +224,8 @@ export default function Home() {
             <Menu size={20} />
           </button>
           <span className="font-bold text-sm flex items-center gap-1.5" style={{ color: "var(--text)" }}>
-            <BookOpen size={16} style={{ color: "var(--accent)" }} />
-            Life Journal
+            <PeacockFeatherIcon size={16} />
+            Inkwell
           </span>
           <div className="ml-auto">
             <ThemeSelector />
@@ -245,6 +259,12 @@ export default function Home() {
           onClose={() => setShowYearly(false)}
         />
       )}
+
+      <SetPinModal
+        open={showSetPinModal}
+        onClose={() => setShowSetPinModal(false)}
+        onConfirm={handlePinConfirmed}
+      />
     </div>
   );
 }

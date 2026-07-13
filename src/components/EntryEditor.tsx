@@ -3,10 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Entry, MOODS, Mood, WEATHER_OPTIONS } from "@/lib/types";
 import { updateEntry, deleteEntry } from "@/lib/storage";
+import { exportEntryHTML, exportEntryXML } from "@/lib/export";
 import {
   FileText,
   Trash2,
-  BookOpen,
   Star,
   MapPin,
   Cloud,
@@ -16,9 +16,12 @@ import {
   CloudSnow,
   Wind,
   Code,
-  Pin
+  Pin,
+  Maximize2,
+  Minimize2
 } from "lucide-react";
 import MoodPicker from "./MoodPicker";
+import PeacockFeatherIcon from "./icons/PeacockFeatherIcon";
 import TagInput from "./TagInput";
 import Dropdown from "./ui/Dropdown";
 import RichTextEditor from "./Editor/RichTextEditor";
@@ -60,7 +63,17 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
   const [weather, setWeather] = useState("");
   const [saved, setSaved] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  useEffect(() => {
+    if (!isFullscreen) return;
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setIsFullscreen(false);
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isFullscreen]);
 
   // Load entry data when selected entry changes
   useEffect(() => {
@@ -200,77 +213,20 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
 
   function handleExportHTML() {
     if (!entry) return;
-    const moodInfo = MOODS.find((m) => m.value === entry.mood);
-    const exportContent = `
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <title>${entry.title || "Journal Entry"}</title>
-        <style>
-          @page { margin: 20mm; }
-          body { font-family: 'Inter', -apple-system, sans-serif; color: #1e1b2e; line-height: 1.8; max-width: 700px; margin: 0 auto; padding: 40px 20px; }
-          h1 { font-size: 28px; margin-bottom: 8px; color: #1e1b2e; }
-          .meta { color: #9d96b8; font-size: 14px; margin-bottom: 32px; }
-          .mood { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 14px; margin-bottom: 24px; }
-          .tags { margin-bottom: 24px; }
-          .tag { display: inline-block; padding: 2px 8px; border-radius: 6px; background: #eef0ff; color: #4338ca; font-size: 12px; margin-right: 4px; }
-          .content { margin-top: 24px; }
-          .content p { margin-bottom: 16px; }
-          .footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #e2dff0; font-size: 12px; color: #9d96b8; text-align: center; }
-        </style>
-      </head>
-      <body>
-        <h1>${entry.title || "Untitled"}</h1>
-        <div class="meta">${new Date(entry.createdAt).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</div>
-        ${moodInfo ? `<div class="mood">${moodInfo.label}</div>` : ""}
-        ${entry.tags.length > 0 ? `<div class="tags">${entry.tags.map((t) => `<span class="tag">#${t}</span>`).join(" ")}</div>` : ""}
-        <div class="content">${entry.content}</div>
-        <div class="footer">From my Life Journal — a private reflection</div>
-      </body>
-      </html>
-    `;
-
-    const blob = new Blob([exportContent], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `journal-entry-${entry.id.slice(0, 8)}.html`;
-    a.click();
-    URL.revokeObjectURL(url);
+    exportEntryHTML(entry);
   }
 
   function handleExportXML() {
     if (!entry) return;
-    const exportContent = `<?xml version="1.0" encoding="UTF-8"?>
-<entry>
-  <id>${entry.id}</id>
-  <title><![CDATA[${entry.title}]]></title>
-  <createdAt>${entry.createdAt}</createdAt>
-  <updatedAt>${entry.updatedAt}</updatedAt>
-  <mood>${entry.mood || ""}</mood>
-  <location><![CDATA[${entry.location || ""}]]></location>
-  <weather><![CDATA[${entry.weather || ""}]]></weather>
-  <tags>
-    ${entry.tags.map(t => `<tag><![CDATA[${t}]]></tag>`).join("\\n    ")}
-  </tags>
-  <content><![CDATA[${entry.content}]]></content>
-</entry>`;
-
-    const blob = new Blob([exportContent], { type: "application/xml" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `journal-entry-${entry.id.slice(0, 8)}.xml`;
-    a.click();
-    URL.revokeObjectURL(url);
+    exportEntryXML(entry);
   }
 
   if (!entry) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center max-w-sm">
-          <BookOpen size={64} className="mx-auto mb-4" style={{ color: "var(--text-tertiary)" }} />
-          <h2 className="text-2xl font-bold mb-2" style={{ color: "var(--text)" }}>Your Life Journal</h2>
+          <PeacockFeatherIcon size={64} className="mx-auto mb-4" />
+          <h2 className="text-2xl font-bold mb-2" style={{ color: "var(--text)" }}>Your Inkwell</h2>
           <p className="leading-relaxed" style={{ color: "var(--text-secondary)" }}>
             Select an entry from the sidebar or create a new one to start writing.
             This is your private space — every word stays on your device.
@@ -281,7 +237,14 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden">
+    <div
+      className={
+        isFullscreen
+          ? "fixed inset-0 z-50 flex flex-col overflow-hidden"
+          : "flex-1 flex flex-col h-full overflow-hidden"
+      }
+      style={isFullscreen ? { backgroundColor: "var(--bg)" } : undefined}
+    >
       {/* Top Header info (Mood, Favorite, Saved status) */}
       <div className="flex flex-col bg-[var(--bg-card)]">
         <div className="flex items-center gap-2 px-4 py-3 border-b-2 border-[var(--border)]">
@@ -320,7 +283,17 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
                />
             ))}
           </div>
-          
+
+          {isFullscreen && (
+            <input
+              value={title}
+              onChange={(e) => handleTitleChange(e.target.value)}
+              placeholder="Entry title…"
+              className="flex-1 min-w-0 text-sm font-semibold bg-transparent border-none outline-none px-2"
+              style={{ color: "var(--text)" }}
+            />
+          )}
+
           <div className="ml-auto flex items-center gap-3">
             <span
               className="text-xs"
@@ -331,60 +304,69 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
             <span className="text-xs text-[var(--text-tertiary)]">
               | {wordCount(content)} words
             </span>
+            <button
+              onClick={() => setIsFullscreen(!isFullscreen)}
+              className="btn btn-icon btn-ghost"
+              title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+            >
+              {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            </button>
           </div>
         </div>
-        
-        <div className="px-6 py-4 border-b border-[var(--border-light)]">
-          {/* Date */}
-          <p className="text-sm mb-2" style={{ color: "var(--text-tertiary)" }}>
-            {new Date(entry.createdAt).toLocaleDateString("en-US", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
 
-          {/* Title */}
-          <input
-            value={title}
-            onChange={(e) => handleTitleChange(e.target.value)}
-            placeholder="Entry title…"
-            className="w-full text-4xl font-bold bg-transparent border-none outline-none mb-6"
-            style={{ color: "var(--text)" }}
-            onFocus={(e) => e.currentTarget.style.setProperty("--tw-placeholder-color", "var(--text-tertiary)")}
-          />
-          
-          <div className="flex flex-wrap items-center gap-4 mb-4">
-            {/* Location */}
-            <div className="flex items-center gap-2 w-48">
-              <MapPin size={16} style={{ color: "var(--text-tertiary)" }} />
-              <input
-                value={location}
-                onChange={(e) => handleLocationChange(e.target.value)}
-                placeholder="Add location..."
-                className="input-field"
-              />
+        {!isFullscreen && (
+          <div className="px-6 py-4 border-b border-[var(--border-light)]">
+            {/* Date */}
+            <p className="text-sm mb-2" style={{ color: "var(--text-tertiary)" }}>
+              {new Date(entry.createdAt).toLocaleDateString("en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </p>
+
+            {/* Title */}
+            <input
+              value={title}
+              onChange={(e) => handleTitleChange(e.target.value)}
+              placeholder="Entry title…"
+              className="w-full text-4xl font-bold bg-transparent border-none outline-none mb-6"
+              style={{ color: "var(--text)" }}
+              onFocus={(e) => e.currentTarget.style.setProperty("--tw-placeholder-color", "var(--text-tertiary)")}
+            />
+
+            <div className="flex flex-wrap items-center gap-4 mb-4">
+              {/* Location */}
+              <div className="flex items-center gap-2 w-48">
+                <MapPin size={16} style={{ color: "var(--text-tertiary)" }} />
+                <input
+                  value={location}
+                  onChange={(e) => handleLocationChange(e.target.value)}
+                  placeholder="Add location..."
+                  className="input-field"
+                />
+              </div>
+
+              {/* Weather using Custom Dropdown */}
+              <div className="flex items-center gap-2 w-48 z-10">
+                <Cloud size={16} style={{ color: "var(--text-tertiary)" }} />
+                <Dropdown
+                  options={weatherOptionsWithIcons}
+                  value={weather}
+                  onChange={handleWeatherChange}
+                  placeholder="Select weather..."
+                  className="w-full"
+                />
+              </div>
             </div>
 
-            {/* Weather using Custom Dropdown */}
-            <div className="flex items-center gap-2 w-48 z-10">
-              <Cloud size={16} style={{ color: "var(--text-tertiary)" }} />
-              <Dropdown 
-                options={weatherOptionsWithIcons} 
-                value={weather} 
-                onChange={handleWeatherChange} 
-                placeholder="Select weather..."
-                className="w-full"
-              />
+            {/* Tags */}
+            <div className="mb-2">
+              <TagInput tags={tags} onChange={handleTagsChange} />
             </div>
           </div>
-
-          {/* Tags */}
-          <div className="mb-2">
-            <TagInput tags={tags} onChange={handleTagsChange} />
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Tiptap Editor */}
@@ -393,6 +375,7 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
       </div>
 
       {/* Bottom bar */}
+      {!isFullscreen && (
       <div className="flex items-center justify-between px-4 py-2 border-t-2 border-[var(--border)] bg-[var(--bg-card)]">
         <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
           {entry.createdAt.split("T")[0] === new Date().toISOString().split("T")[0]
@@ -427,6 +410,7 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
           </button>
         </div>
       </div>
+      )}
     </div>
   );
 }

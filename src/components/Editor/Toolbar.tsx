@@ -7,7 +7,6 @@ import {
   Italic,
   Underline as UnderlineIcon,
   Strikethrough,
-  Code,
   Highlighter,
   Subscript as SubIcon,
   Superscript as SuperIcon,
@@ -30,7 +29,8 @@ import {
   Trash2,
   Rows,
   Columns,
-  Type
+  Type,
+  Code2
 } from 'lucide-react';
 
 interface ToolbarProps {
@@ -247,8 +247,8 @@ export default function Toolbar({ editor }: ToolbarProps) {
         </ToolbarButton>
       </div>
 
-      <ToolbarButton onClick={() => editor.chain().focus().toggleCode().run()} isActive={editor.isActive('code')} title="Inline Code">
-        <Code size={16} />
+      <ToolbarButton onClick={() => editor.chain().focus().toggleCodeBlock().run()} isActive={editor.isActive('codeBlock')} title="Code Block">
+        <Code2 size={16} />
       </ToolbarButton>
 
       <Divider />

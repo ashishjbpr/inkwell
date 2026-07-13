@@ -13,7 +13,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Life Journal — Your Private Diary",
+  title: "Inkwell — Your Private Diary",
   description:
     "A warm, private space for your daily thoughts. Every word stays on your device.",
 };

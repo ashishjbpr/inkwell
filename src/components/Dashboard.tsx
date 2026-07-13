@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect } from "react";
 import { Entry, MOODS, Mood } from "@/lib/types";
 import CalendarView from "./CalendarView";
 import MoodIcon from "./MoodIcon";
+import FeaturesOverview from "./FeaturesOverview";
 import { getStreak } from "@/lib/storage";
 import { Flame, Activity, LayoutGrid, CalendarDays, Quote as QuoteIcon } from "lucide-react";
 
@@ -204,6 +205,8 @@ export default function Dashboard({
           </div>
         </div>
       </div>
+
+      <FeaturesOverview />
     </div>
   );
 }

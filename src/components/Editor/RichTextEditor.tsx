@@ -1,8 +1,10 @@
 "use client";
 
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, EditorContent, ReactNodeViewRenderer } from '@tiptap/react';
 import { Extension } from '@tiptap/core';
 import { StarterKit } from '@tiptap/starter-kit';
+import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight';
+import { common, createLowlight } from 'lowlight';
 import { Underline } from '@tiptap/extension-underline';
 import { Highlight } from '@tiptap/extension-highlight';
 import { Subscript } from '@tiptap/extension-subscript';
@@ -22,8 +24,11 @@ import { TaskItem } from '@tiptap/extension-task-item';
 import { TaskList } from '@tiptap/extension-task-list';
 
 import Toolbar from '@/components/Editor/Toolbar';
+import CodeBlockComponent from '@/components/Editor/CodeBlockComponent';
 import React, { useCallback, useEffect } from 'react';
 import { saveImage, getImage } from '@/lib/indexedDB';
+
+const lowlight = createLowlight(common);
 
 interface RichTextEditorProps {
   content: string;
@@ -99,7 +104,13 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
   const extensions = React.useMemo(() => [
     StarterKit.configure({
       heading: { levels: [1, 2, 3, 4, 5, 6] },
+      codeBlock: false,
     }),
+    CodeBlockLowlight.extend({
+      addNodeView() {
+        return ReactNodeViewRenderer(CodeBlockComponent);
+      },
+    }).configure({ lowlight }),
     Underline,
     Highlight.configure({ multicolor: true }),
     Subscript,
@@ -214,8 +225,14 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
   // Sync external content changes (if selecting a different entry)
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
-      editor.commands.setContent(content);
-      restoreImages(editor);
+      // Defer outside the current commit phase — ReactNodeViewRenderer (used by
+      // the code block) calls flushSync internally, which React disallows while
+      // already rendering/committing.
+      const id = setTimeout(() => {
+        editor.commands.setContent(content);
+        restoreImages(editor);
+      }, 0);
+      return () => clearTimeout(id);
     }
   }, [content, editor]);
 
@@ -232,7 +249,7 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
       </div>
 
       {/* Editor Content Area */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto papyrus-surface">
         <div className="max-w-4xl mx-auto p-6 md:p-12 tiptap-editor">
           <EditorContent editor={editor} />
         </div>

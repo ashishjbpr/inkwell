@@ -574,6 +574,49 @@ body {
   color: var(--text);
 }
 
+.cal-title-wrap {
+  position: relative;
+}
+
+.cal-title-btn {
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.cal-title-btn:hover {
+  background: var(--cal-nav-hover);
+}
+
+.cal-picker {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  background: var(--cal-bg);
+  border: 2px solid var(--cal-border);
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.cal-picker-select {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--cal-nav-hover);
+  border: 1.5px solid transparent;
+  border-radius: 6px;
+  padding: 5px 6px;
+  cursor: pointer;
+  max-height: 200px;
+}
+
 .cal-nav-btn {
   width: 32px;
   height: 32px;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Entry } from "@/lib/types";
 
 interface CalendarViewProps {
@@ -66,8 +66,29 @@ export default function CalendarView({
   const todayStr = toDateStr(today.getFullYear(), today.getMonth(), today.getDate());
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
+  const [showPicker, setShowPicker] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
 
   const grid = useMemo(() => getMonthGrid(viewYear, viewMonth), [viewYear, viewMonth]);
+
+  const yearOptions = useMemo(() => {
+    const start = today.getFullYear() - 100;
+    const end = today.getFullYear() + 20;
+    const years: number[] = [];
+    for (let y = end; y >= start; y--) years.push(y);
+    return years;
+  }, [today]);
+
+  useEffect(() => {
+    if (!showPicker) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setShowPicker(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showPicker]);
 
   const entryDateSet = useMemo(() => {
     const set = new Set<string>();
@@ -114,7 +135,41 @@ export default function CalendarView({
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        <span className="cal-title">{MONTHS[viewMonth]} {viewYear}</span>
+        <div className="cal-title-wrap" ref={pickerRef}>
+          <button
+            type="button"
+            className="cal-title cal-title-btn"
+            onClick={() => setShowPicker((v) => !v)}
+            aria-haspopup="true"
+            aria-expanded={showPicker}
+          >
+            {MONTHS[viewMonth]} {viewYear}
+          </button>
+          {showPicker && (
+            <div className="cal-picker">
+              <select
+                className="cal-picker-select"
+                value={viewMonth}
+                onChange={(e) => setViewMonth(Number(e.target.value))}
+                aria-label="Select month"
+              >
+                {MONTHS.map((m, i) => (
+                  <option key={m} value={i}>{m}</option>
+                ))}
+              </select>
+              <select
+                className="cal-picker-select"
+                value={viewYear}
+                onChange={(e) => setViewYear(Number(e.target.value))}
+                aria-label="Select year"
+              >
+                {yearOptions.map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
         <button onClick={nextMonth} className="cal-nav-btn" aria-label="Next month">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="9 18 15 12 9 6" />

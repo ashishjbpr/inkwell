@@ -17,7 +17,8 @@ import {
   Pin,
   MoreVertical,
   Code,
-  Terminal
+  Terminal,
+  LogOut
 } from "lucide-react";
 import ThemeSelector from "@/components/ThemeSelector";
 import PeacockFeatherIcon from "@/components/icons/PeacockFeatherIcon";
@@ -34,6 +35,7 @@ interface SidebarProps {
   onToggle: () => void;
   hasPin: boolean;
   onLockApp: () => void;
+  onSignOut: () => void;
 }
 
 export default function Sidebar({
@@ -46,7 +48,8 @@ export default function Sidebar({
   open,
   onToggle,
   hasPin,
-  onLockApp
+  onLockApp,
+  onSignOut
 }: SidebarProps) {
   const [search, setSearch] = useState("");
   const [moodFilter, setMoodFilter] = useState<Mood | "all">("all");
@@ -328,6 +331,13 @@ export default function Sidebar({
             <Terminal size={14} />
             For Developers
           </Link>
+          <button
+            onClick={onSignOut}
+            className="btn btn-secondary w-full text-xs py-2"
+          >
+            <LogOut size={14} />
+            Sign Out
+          </button>
         </div>
       </aside>
     </>

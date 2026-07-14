@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Lora, Inter } from "next/font/google";
+import SessionProviderWrapper from "@/components/providers/SessionProviderWrapper";
 import "./globals.css";
 
 const lora = Lora({ 
@@ -15,7 +16,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Inkwell — Your Private Diary",
   description:
-    "A warm, private space for your daily thoughts. Every word stays on your device.",
+    "A warm, private space for your daily thoughts, securely synced to your account.",
 };
 
 export default function RootLayout({
@@ -43,7 +44,9 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="h-full overflow-hidden font-sans antialiased">{children}</body>
+      <body className="h-full overflow-hidden font-sans antialiased">
+        <SessionProviderWrapper>{children}</SessionProviderWrapper>
+      </body>
     </html>
   );
 }

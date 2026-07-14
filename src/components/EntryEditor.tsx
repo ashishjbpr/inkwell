@@ -61,7 +61,7 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
   const [colorFlag, setColorFlag] = useState("");
   const [location, setLocation] = useState("");
   const [weather, setWeather] = useState("");
-  const [saved, setSaved] = useState(true);
+  const [saveState, setSaveState] = useState<"saved" | "saving" | "error">("saved");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -87,38 +87,42 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
       setColorFlag(entry.colorFlag || "");
       setLocation(entry.location || "");
       setWeather(entry.weather || "");
-      setSaved(true);
+      setSaveState("saved");
       setConfirmDelete(false);
     }
   }, [entry?.id]);
 
   const doSave = useCallback(
-    (
-      t: string, 
-      c: string, 
-      m: Mood | null, 
-      tg: string[], 
+    async (
+      t: string,
+      c: string,
+      m: Mood | null,
+      tg: string[],
       fav: boolean,
       pin: boolean,
       flag: string,
-      loc: string, 
+      loc: string,
       wea: string
     ) => {
       if (!entry || !m) return;
-      const updated = updateEntry(entry.id, {
-        title: t,
-        content: c,
-        mood: m,
-        tags: tg,
-        isFavorite: fav,
-        isPinned: pin,
-        colorFlag: flag,
-        location: loc,
-        weather: wea
-      });
-      if (updated) {
-        setSaved(true);
-        onUpdate(updated);
+      try {
+        const updated = await updateEntry(entry.id, {
+          title: t,
+          content: c,
+          mood: m,
+          tags: tg,
+          isFavorite: fav,
+          isPinned: pin,
+          colorFlag: flag,
+          location: loc,
+          weather: wea
+        });
+        if (updated) {
+          setSaveState("saved");
+          onUpdate(updated);
+        }
+      } catch {
+        setSaveState("error");
       }
     },
     [entry?.id, onUpdate]
@@ -141,67 +145,67 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
 
   function handleTitleChange(val: string) {
     setTitle(val);
-    setSaved(false);
+    setSaveState("saving");
     debounceSave(val, content, mood, tags, isFavorite, isPinned, colorFlag, location, weather);
   }
 
   function handleContentChange(html: string) {
     setContent(html);
-    setSaved(false);
+    setSaveState("saving");
     debounceSave(title, html, mood, tags, isFavorite, isPinned, colorFlag, location, weather);
   }
 
   function handleMoodChange(val: Mood) {
     setMood(val);
-    setSaved(false);
+    setSaveState("saving");
     debounceSave(title, content, val, tags, isFavorite, isPinned, colorFlag, location, weather);
   }
 
   function handleTagsChange(val: string[]) {
     setTags(val);
-    setSaved(false);
+    setSaveState("saving");
     debounceSave(title, content, mood, val, isFavorite, isPinned, colorFlag, location, weather);
   }
 
   function toggleFavorite() {
     const newVal = !isFavorite;
     setIsFavorite(newVal);
-    setSaved(false);
+    setSaveState("saving");
     debounceSave(title, content, mood, tags, newVal, isPinned, colorFlag, location, weather);
   }
 
   function togglePinned() {
     const newVal = !isPinned;
     setIsPinned(newVal);
-    setSaved(false);
+    setSaveState("saving");
     debounceSave(title, content, mood, tags, isFavorite, newVal, colorFlag, location, weather);
   }
 
   function handleColorFlagChange(val: string) {
     setColorFlag(val);
-    setSaved(false);
+    setSaveState("saving");
     debounceSave(title, content, mood, tags, isFavorite, isPinned, val, location, weather);
   }
 
   function handleLocationChange(val: string) {
     setLocation(val);
-    setSaved(false);
+    setSaveState("saving");
     debounceSave(title, content, mood, tags, isFavorite, isPinned, colorFlag, val, weather);
   }
 
   function handleWeatherChange(val: string) {
     setWeather(val);
-    setSaved(false);
+    setSaveState("saving");
     debounceSave(title, content, mood, tags, isFavorite, isPinned, colorFlag, location, val);
   }
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!entry) return;
     if (!confirmDelete) {
       setConfirmDelete(true);
       return;
     }
-    deleteEntry(entry.id);
+    await deleteEntry(entry.id);
     onDelete(entry.id);
   }
 
@@ -229,7 +233,7 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
           <h2 className="text-2xl font-bold mb-2" style={{ color: "var(--text)" }}>Your Inkwell</h2>
           <p className="leading-relaxed" style={{ color: "var(--text-secondary)" }}>
             Select an entry from the sidebar or create a new one to start writing.
-            This is your private space — every word stays on your device.
+            This is your private space, synced securely to your account.
           </p>
         </div>
       </div>
@@ -297,9 +301,9 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
           <div className="ml-auto flex items-center gap-3">
             <span
               className="text-xs"
-              style={{ color: saved ? "var(--text-tertiary)" : "var(--accent)" }}
+              style={{ color: saveState === "error" ? "#ef4444" : saveState === "saved" ? "var(--text-tertiary)" : "var(--accent)" }}
             >
-              {saved ? "● Saved" : "○ Saving…"}
+              {saveState === "error" ? "⚠ Not saved" : saveState === "saved" ? "● Saved" : "○ Saving…"}
             </span>
             <span className="text-xs text-[var(--text-tertiary)]">
               | {wordCount(content)} words

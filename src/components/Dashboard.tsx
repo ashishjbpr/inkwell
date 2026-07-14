@@ -27,7 +27,7 @@ export default function Dashboard({
   onSelectEntry,
   onNew,
 }: DashboardProps) {
-  const streak = getStreak();
+  const streak = getStreak(entries);
   const [quote, setQuote] = useState<{ text: string; author: string } | null>(null);
 
   useEffect(() => {

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useSession, signOut } from "next-auth/react";
 import { Entry } from "@/lib/types";
 import { getEntries, createEntry, updateEntry, getPin, setPin as savePin } from "@/lib/storage";
 import { Menu } from "lucide-react";
@@ -12,44 +13,100 @@ import KnowledgeGraph from "@/components/KnowledgeGraph";
 import ThemeSelector from "@/components/ThemeSelector";
 import PinLock from "@/components/PinLock";
 import SetPinModal from "@/components/SetPinModal";
+import SignIn from "@/components/SignIn";
+import MigrationPrompt from "@/components/MigrationPrompt";
 import PeacockFeatherIcon from "@/components/icons/PeacockFeatherIcon";
 
+const LOCAL_ENTRIES_KEY = "life-journal-entries";
+const MIGRATED_KEY = "life-journal-migrated";
+
 export default function Home() {
+  const { data: session, status } = useSession();
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [entriesLoaded, setEntriesLoaded] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showYearly, setShowYearly] = useState(false);
   const [showGraph, setShowGraph] = useState(false);
-  
+  const [migrationCount, setMigrationCount] = useState<number | null>(null);
+
   // Pin Lock state
   const [isLocked, setIsLocked] = useState(false);
   const [pinHash, setPinHash] = useState<string | null>(null);
   const [showSetPinModal, setShowSetPinModal] = useState(false);
 
   useEffect(() => {
-    setEntries(getEntries());
+    const today = new Date();
+    const yy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    setSelectedDate(`${yy}-${mm}-${dd}`);
+  }, []);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+
     const savedPin = getPin();
     if (savedPin) {
       setPinHash(savedPin);
       setIsLocked(true);
     }
 
-    const today = new Date();
-    const yy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, "0");
-    const dd = String(today.getDate()).padStart(2, "0");
-    setSelectedDate(`${yy}-${mm}-${dd}`);
+    (async () => {
+      try {
+        const data = await getEntries();
+        setEntries(data);
+      } finally {
+        setEntriesLoaded(true);
+      }
+    })();
 
-    setIsLoaded(true);
-  }, []);
+    const raw = localStorage.getItem(LOCAL_ENTRIES_KEY);
+    const migratedFor = localStorage.getItem(MIGRATED_KEY);
+    const email = session?.user?.email;
+    if (raw && email && migratedFor !== email) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMigrationCount(parsed.length);
+        }
+      } catch {
+        // ignore malformed local data
+      }
+    }
+  }, [status, session?.user?.email]);
+
+  async function handleImportLocalEntries() {
+    const raw = localStorage.getItem(LOCAL_ENTRIES_KEY);
+    const email = session?.user?.email;
+    if (!raw || !email) return;
+    const parsed = JSON.parse(raw);
+    await fetch("/api/entries/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ entries: parsed }),
+    });
+    localStorage.setItem(MIGRATED_KEY, email);
+    localStorage.removeItem(LOCAL_ENTRIES_KEY);
+    setMigrationCount(null);
+    const data = await getEntries();
+    setEntries(data);
+  }
+
+  function handleSkipMigration() {
+    const email = session?.user?.email;
+    if (email) {
+      localStorage.setItem(MIGRATED_KEY, email);
+    }
+    setMigrationCount(null);
+  }
 
   const selectedEntry = selectedId
     ? entries.find((e) => e.id === selectedId) ?? null
     : null;
 
-  function handleNew(dateStr?: string | null) {
+  async function handleNew(dateStr?: string | null) {
     let createdAtObj = new Date();
     if (typeof dateStr === "string" && dateStr) {
       const parts = dateStr.split("-");
@@ -58,7 +115,7 @@ export default function Home() {
       }
     }
 
-    const entry = createEntry({
+    const entry = await createEntry({
       title: "",
       content: "",
       mood: "thoughtful",
@@ -97,11 +154,14 @@ export default function Home() {
     setEntries((prev) => {
       const target = prev.find((e) => e.id === id);
       if (!target) return prev;
-      const updated = updateEntry(id, { isPinned: !target.isPinned });
-      if (!updated) return prev;
-      return prev.map((e) => (e.id === id ? updated : e));
+      return prev.map((e) => (e.id === id ? { ...e, isPinned: !target.isPinned } : e));
     });
-  }, []);
+
+    updateEntry(id, { isPinned: !entries.find((e) => e.id === id)?.isPinned }).then((updated) => {
+      if (!updated) return;
+      setEntries((prev) => prev.map((e) => (e.id === id ? updated : e)));
+    });
+  }, [entries]);
 
   function handleExport() {
     if (entries.length === 0) return;
@@ -181,7 +241,7 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  if (!isLoaded) {
+  if (status === "loading" || (status === "authenticated" && !entriesLoaded)) {
     return (
       <div className="h-full flex items-center justify-center" style={{ backgroundColor: "var(--bg)" }}>
         <div className="text-center">
@@ -190,6 +250,10 @@ export default function Home() {
         </div>
       </div>
     );
+  }
+
+  if (status === "unauthenticated") {
+    return <SignIn />;
   }
 
   if (isLocked && pinHash) {
@@ -209,6 +273,7 @@ export default function Home() {
         onToggle={() => setSidebarOpen(!sidebarOpen)}
         hasPin={!!pinHash}
         onLockApp={handleLockApp}
+        onSignOut={() => signOut()}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -276,6 +341,14 @@ export default function Home() {
         onClose={() => setShowSetPinModal(false)}
         onConfirm={handlePinConfirmed}
       />
+
+      {migrationCount !== null && (
+        <MigrationPrompt
+          count={migrationCount}
+          onImport={handleImportLocalEntries}
+          onSkip={handleSkipMigration}
+        />
+      )}
     </div>
   );
 }

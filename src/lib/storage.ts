@@ -2,7 +2,6 @@
 
 import { Entry } from "./types";
 
-const STORAGE_KEY = "life-journal-entries";
 const PIN_KEY = "life-journal-pin";
 
 export function getPin(): string | null {
@@ -25,60 +24,46 @@ export function validatePin(pin: string): boolean {
   return stored === pin;
 }
 
-export function getEntries(): Entry[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw) as Entry[];
-  } catch {
-    return [];
-  }
+export async function getEntries(): Promise<Entry[]> {
+  const res = await fetch("/api/entries");
+  if (!res.ok) throw new Error("Failed to load entries");
+  return res.json();
 }
 
-export function saveEntries(entries: Entry[]): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-}
-
-export function getEntry(id: string): Entry | undefined {
-  return getEntries().find((e) => e.id === id);
-}
-
-export function createEntry(entry: Omit<Entry, "id" | "createdAt" | "updatedAt"> & { createdAt?: string }): Entry {
-  const entries = getEntries();
+export async function createEntry(
+  entry: Omit<Entry, "id" | "createdAt" | "updatedAt"> & { createdAt?: string }
+): Promise<Entry> {
+  const id = crypto.randomUUID();
   const now = entry.createdAt || new Date().toISOString();
-  const newEntry: Entry = {
-    ...entry,
-    id: crypto.randomUUID(),
-    createdAt: now,
-    updatedAt: now,
-  };
-  entries.unshift(newEntry);
-  saveEntries(entries);
-  return newEntry;
+  const res = await fetch("/api/entries", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...entry, id, createdAt: now }),
+  });
+  if (!res.ok) throw new Error("Failed to create entry");
+  return res.json();
 }
 
-export function updateEntry(id: string, updates: Partial<Omit<Entry, "id" | "createdAt">>): Entry | undefined {
-  const entries = getEntries();
-  const idx = entries.findIndex((e) => e.id === id);
-  if (idx === -1) return undefined;
-  entries[idx] = {
-    ...entries[idx],
-    ...updates,
-    updatedAt: new Date().toISOString(),
-  };
-  saveEntries(entries);
-  return entries[idx];
+export async function updateEntry(
+  id: string,
+  updates: Partial<Omit<Entry, "id" | "createdAt">>
+): Promise<Entry | undefined> {
+  const res = await fetch(`/api/entries/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updates),
+  });
+  if (res.status === 404) return undefined;
+  if (!res.ok) throw new Error("Failed to update entry");
+  return res.json();
 }
 
-export function deleteEntry(id: string): void {
-  const entries = getEntries().filter((e) => e.id !== id);
-  saveEntries(entries);
+export async function deleteEntry(id: string): Promise<void> {
+  const res = await fetch(`/api/entries/${id}`, { method: "DELETE" });
+  if (!res.ok && res.status !== 404) throw new Error("Failed to delete entry");
 }
 
-export function getStreak(): number {
-  const entries = getEntries();
+export function getStreak(entries: Entry[]): number {
   if (entries.length === 0) return 0;
 
   // Get unique dates (by day) in local time sorted descending
@@ -102,7 +87,7 @@ export function getStreak(): number {
   if (startIdx === -1) return 0;
 
   // Since we use YYYY-MM-DD, creating a date from it parses as UTC midnight, which is consistent for math
-  const checkDate = new Date(dates[0]); 
+  const checkDate = new Date(dates[0]);
   for (let i = 0; i < dates.length; i++) {
     const expected = new Date(checkDate);
     expected.setDate(expected.getDate() - i);

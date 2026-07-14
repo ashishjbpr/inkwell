@@ -118,8 +118,8 @@ const FEATURES: { icon: React.ElementType; title: string; description: string }[
   },
   {
     icon: ShieldCheck,
-    title: "100% Private",
-    description: "Everything is stored locally on your device — no account, no server, no tracking.",
+    title: "Private & Synced",
+    description: "Sign in with Google and your entries sync securely to your own account — private to you, accessible on any device.",
   },
   {
     icon: Sparkles,

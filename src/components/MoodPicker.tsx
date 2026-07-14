@@ -11,10 +11,22 @@ interface MoodPickerProps {
   customMoods?: Mood[];
 }
 
+const SAVED_MOODS_KEY = "life-journal-custom-moods";
+
 export default function MoodPicker({ value, onChange, customMoods = [] }: MoodPickerProps) {
   const [open, setOpen] = useState(false);
   const [newMood, setNewMood] = useState("");
+  const [savedMoods, setSavedMoods] = useState<string[]>([]);
   const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SAVED_MOODS_KEY);
+      if (raw) setSavedMoods(JSON.parse(raw));
+    } catch {
+      // ignore malformed local data
+    }
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -27,6 +39,9 @@ export default function MoodPicker({ value, onChange, customMoods = [] }: MoodPi
   }, []);
 
   const builtInValues = new Set(MOODS.map((m) => m.value));
+  const allCustomMoods = Array.from(new Set([...savedMoods, ...customMoods])).filter(
+    (m) => !builtInValues.has(m)
+  );
   const selected = value
     ? MOODS.find((m) => m.value === value) ?? { value, label: value, icon: "", color: "" }
     : null;
@@ -36,9 +51,19 @@ export default function MoodPicker({ value, onChange, customMoods = [] }: MoodPi
     setOpen(false);
   }
 
+  function persistMood(mood: string) {
+    setSavedMoods((prev) => {
+      if (prev.includes(mood)) return prev;
+      const next = [...prev, mood];
+      localStorage.setItem(SAVED_MOODS_KEY, JSON.stringify(next));
+      return next;
+    });
+  }
+
   function handleAddMood() {
     const trimmed = newMood.trim();
     if (!trimmed) return;
+    persistMood(trimmed);
     handleSelect(trimmed);
     setNewMood("");
   }
@@ -100,7 +125,7 @@ export default function MoodPicker({ value, onChange, customMoods = [] }: MoodPi
             </button>
           ))}
 
-          {customMoods.filter((m) => !builtInValues.has(m)).length > 0 && (
+          {allCustomMoods.length > 0 && (
             <>
               <div
                 className="text-xs font-bold uppercase tracking-wider px-3 pt-2 pb-1"
@@ -108,8 +133,7 @@ export default function MoodPicker({ value, onChange, customMoods = [] }: MoodPi
               >
                 Your Moods
               </div>
-              {customMoods
-                .filter((m) => !builtInValues.has(m))
+              {allCustomMoods
                 .map((mood) => (
                   <button
                     key={mood}

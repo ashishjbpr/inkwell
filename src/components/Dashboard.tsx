@@ -42,10 +42,24 @@ export default function Dashboard({
     entries.forEach((e) => {
       counts.set(e.mood, (counts.get(e.mood) || 0) + 1);
     });
-    return MOODS.map((m) => ({
+
+    const builtIn = MOODS.map((m) => ({
       ...m,
       count: counts.get(m.value) || 0,
-    })).sort((a, b) => b.count - a.count);
+    }));
+
+    const builtInValues = new Set(MOODS.map((m) => m.value));
+    const custom = Array.from(counts.keys())
+      .filter((mood) => !builtInValues.has(mood))
+      .map((mood) => ({
+        value: mood,
+        label: mood,
+        icon: "",
+        color: "#a1a1aa",
+        count: counts.get(mood) || 0,
+      }));
+
+    return [...builtIn, ...custom].sort((a, b) => b.count - a.count);
   }, [entries]);
 
   const dateEntries = useMemo(() => {

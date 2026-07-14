@@ -33,7 +33,7 @@ export function exportEntryHTML(entry: Entry) {
     <body>
       <h1>${entry.title || "Untitled"}</h1>
       <div class="meta">${new Date(entry.createdAt).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</div>
-      ${moodInfo ? `<div class="mood">${moodInfo.label}</div>` : ""}
+      ${entry.mood ? `<div class="mood">${moodInfo ? moodInfo.label : entry.mood}</div>` : ""}
       ${entry.tags.length > 0 ? `<div class="tags">${entry.tags.map((t) => `<span class="tag">#${t}</span>`).join(" ")}</div>` : ""}
       <div class="content">${entry.content}</div>
       <div class="footer">From my Inkwell — a private reflection</div>

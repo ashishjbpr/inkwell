@@ -49,9 +49,10 @@ interface EntryEditorProps {
   entry: Entry | null;
   onDelete: (id: string) => void;
   onUpdate: (entry: Entry) => void;
+  customMoods?: Mood[];
 }
 
-export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorProps) {
+export default function EntryEditor({ entry, onDelete, onUpdate, customMoods = [] }: EntryEditorProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [mood, setMood] = useState<Mood | null>(null);
@@ -252,7 +253,7 @@ export default function EntryEditor({ entry, onDelete, onUpdate }: EntryEditorPr
       {/* Top Header info (Mood, Favorite, Saved status) */}
       <div className="flex flex-col bg-[var(--bg-card)]">
         <div className="flex items-center gap-2 px-4 py-3 border-b-2 border-[var(--border)]">
-          <MoodPicker value={mood} onChange={handleMoodChange} />
+          <MoodPicker value={mood} onChange={handleMoodChange} customMoods={customMoods} />
 
           <div className="w-px h-6 bg-[var(--border)]" />
 

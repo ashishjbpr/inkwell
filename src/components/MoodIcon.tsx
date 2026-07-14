@@ -9,11 +9,12 @@ import {
   Lightbulb,
   Heart,
   Sunrise,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { Mood } from "@/lib/types";
 
-const iconMap: Record<Mood, LucideIcon> = {
+const iconMap: Record<string, LucideIcon> = {
   happy: Smile,
   sad: Frown,
   angry: Angry,
@@ -26,6 +27,9 @@ const iconMap: Record<Mood, LucideIcon> = {
   hopeful: Sunrise,
 };
 
+// Generic icon for custom moods that aren't one of the built-in presets.
+const FALLBACK_ICON = Sparkles;
+
 interface MoodIconProps {
   mood: Mood;
   className?: string;
@@ -33,7 +37,6 @@ interface MoodIconProps {
 }
 
 export default function MoodIcon({ mood, className, size = 20 }: MoodIconProps) {
-  const Icon = iconMap[mood];
-  if (!Icon) return null;
+  const Icon = iconMap[mood] ?? FALLBACK_ICON;
   return <Icon className={className} size={size} />;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { Entry } from "@/lib/types";
 import { getEntries, createEntry, updateEntry, getPin, setPin as savePin } from "@/lib/storage";
@@ -105,6 +105,11 @@ export default function Home() {
   const selectedEntry = selectedId
     ? entries.find((e) => e.id === selectedId) ?? null
     : null;
+
+  const customMoods = useMemo(
+    () => Array.from(new Set(entries.map((e) => e.mood))),
+    [entries]
+  );
 
   async function handleNew(dateStr?: string | null) {
     let createdAtObj = new Date();
@@ -305,6 +310,7 @@ export default function Home() {
               entry={selectedEntry}
               onDelete={handleDelete}
               onUpdate={handleUpdate}
+              customMoods={customMoods}
               key={selectedEntry.id}
             />
           ) : (

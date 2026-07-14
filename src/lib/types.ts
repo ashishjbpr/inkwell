@@ -1,4 +1,6 @@
-export type Mood = "happy" | "sad" | "angry" | "anxious" | "calm" | "excited" | "tired" | "thoughtful" | "grateful" | "hopeful";
+// Built-in presets below cover common moods, but any string is a valid mood —
+// users can create their own custom moods beyond this list.
+export type Mood = string;
 
 export interface Entry {
   id: string;

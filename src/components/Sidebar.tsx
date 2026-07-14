@@ -68,6 +68,15 @@ export default function Sidebar({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [menuOpenId]);
 
+  const customMoods = useMemo(() => {
+    const builtInValues = new Set(MOODS.map((m) => m.value));
+    const seen = new Set<Mood>();
+    entries.forEach((e) => {
+      if (!builtInValues.has(e.mood)) seen.add(e.mood);
+    });
+    return Array.from(seen);
+  }, [entries]);
+
   const filtered = useMemo(() => {
     const results = entries.filter((e) => {
       const q = search.toLowerCase();
@@ -195,6 +204,16 @@ export default function Sidebar({
                 >
                   <MoodIcon mood={mood.value} size={12} />
                   {mood.label}
+                </button>
+              ))}
+              {customMoods.map((mood) => (
+                <button
+                  key={mood}
+                  onClick={() => setMoodFilter(mood)}
+                  className={`shrink-0 cursor-pointer ${moodFilter === mood ? 'badge badge-primary' : 'badge'}`}
+                >
+                  <MoodIcon mood={mood} size={12} />
+                  {mood}
                 </button>
               ))}
             </div>

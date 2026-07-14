@@ -8,6 +8,7 @@ const THEMES = [
   { id: "theme-ocean", label: "Ocean", color: "#0ea5e9" },
   { id: "theme-emerald", label: "Emerald", color: "#10b981" },
   { id: "theme-rose", label: "Rose", color: "#f43f5e" },
+  { id: "theme-ash", label: "Ash", color: "#64748b" },
 ];
 
 export default function ThemeSelector() {

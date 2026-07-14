@@ -140,6 +140,22 @@
   --muted: #881337;
 }
 
+/* Ash Theme */
+.theme-ash {
+  --accent: #64748b;
+  --accent-hover: #475569;
+  --accent-bg: #e2e8f0;
+  --accent-text: #334155;
+  --muted: #e2e8f0;
+}
+.dark.theme-ash {
+  --accent: #94a3b8;
+  --accent-hover: #64748b;
+  --accent-bg: #334155;
+  --accent-text: #e2e8f0;
+  --muted: #334155;
+}
+
 /* Components mapped dynamically to Accent Variables */
 :root {
 
@@ -1136,4 +1152,5 @@ body {
 .tiptap ul[data-type="taskList"] li > div {
   flex: 1 1 auto;
 }
+
 
